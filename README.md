@@ -3,7 +3,7 @@
 @echo off
 
 echo I'll write more in this later:) > README.txt
-echo _______________________________
+echo ________________________________
 cat README.txt
 echo --------------------------------
 echo Please press Enter
