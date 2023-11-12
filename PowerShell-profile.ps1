@@ -181,13 +181,12 @@ function uptime
 }
 
 function reload-profile {
-    & $profile
+    . $profile
 }
-function Find-File($name) 
-{
+function Find-File($name) {
     Get-ChildItem -recurse -filter "*${name}*" -ErrorAction SilentlyContinue | ForEach-Object {
         $place_path = $_.directory
-        Write-Output "${place_path}\${_}"
+        Write-Output "${place_path}"
     }
 }
 function unzip ($file) {
