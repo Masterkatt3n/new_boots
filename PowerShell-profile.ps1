@@ -82,7 +82,7 @@ function admin
     } 
     else 
     {
-        Start-Process "$psHome\pwsh.exe" -Verb runAs
+        Start-Process "pwsh.exe" -Verb runAs -ArgumentList $argList
     }
 }
 
@@ -145,7 +145,6 @@ if (Test-CommandExists nvim)
 Set-Alias -Name vim -Value $EDITOR
 Set-Alias -Name ff -Value Find-File
 
-
 function ll { Get-ChildItem -Path $pwd -File }
 function g { Set-Location $HOME\Documents\Github }
 function gcom 
@@ -179,14 +178,15 @@ function uptime
         
         }
 }
-
+ 
 function reload-profile {
-    . $profile
+    . $PROFILE
 }
-function Find-File($name) {
+function Find-File($name) 
+{
     Get-ChildItem -recurse -filter "*${name}*" -ErrorAction SilentlyContinue | ForEach-Object {
         $place_path = $_.directory
-        Write-Output "${place_path}"
+        Write-Output "${place_path}${_}"
     }
 }
 function unzip ($file) {
