@@ -82,7 +82,7 @@ function admin
     } 
     else 
     {
-        Start-Process "pwsh.exe" -Verb runAs -ArgumentList $argList
+        Start-Process pwsh -Verb runAs -ArgumentList $argList
     }
 }
 
@@ -186,7 +186,7 @@ function Find-File($name)
 {
     Get-ChildItem -recurse -filter "*${name}*" -ErrorAction SilentlyContinue | ForEach-Object {
         $place_path = $_.directory
-        Write-Output "${place_path}${_}"
+        Write-Output "${place_path}/${_}"
     }
 }
 function unzip ($file) {
@@ -256,3 +256,4 @@ Invoke-Expression (& { (zoxide init powershell | Out-String) })
 
 ## Final Line to set prompt
 oh-my-posh init pwsh --config https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/kali.omp.json | Invoke-Expression
+
