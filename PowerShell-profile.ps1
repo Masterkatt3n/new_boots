@@ -11,7 +11,7 @@ $principal = New-Object Security.Principal.WindowsPrincipal $identity
 $isAdmin = $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 
 # If so and the current host is a command line, then change to red color 
-# as warning to user that they are operating in an elevated context
+# as a warning to the user that they are operating in an elevated context
 # Useful shortcuts for traversing directories
 function cd... { Set-Location ..\.. }
 function cd.... { Set-Location ..\..\.. }
@@ -29,60 +29,53 @@ function HKLM: { Set-Location HKLM: }
 function HKCU: { Set-Location HKCU: }
 function Env: { Set-Location Env: }
 
-# Creates drive shortcut for Work Folders, if current user account is using it
-if (Test-Path "$env:USERPROFILE\Work Folders") 
-{
+# Creates a drive shortcut for Work Folders if the current user account is using it
+if (Test-Path "$env:USERPROFILE\Work Folders") {
     New-PSDrive -Name Work -PSProvider FileSystem -Root "$env:USERPROFILE\Work Folders" -Description "Work Folders"
     function Work: { Set-Location Work: }
 }
 
-# Set up command prompt and window title. Use UNIX-style convention for identifying 
-# whether user is elevated (root) or not. Window title shows current version of PowerShell
+# Set up the command prompt and window title. Use UNIX-style conventions for identifying 
+# whether the user is elevated (root) or not. Window title shows the current version of PowerShell
 # and appends [ADMIN] if appropriate for easy taskbar identification
-function prompt 
-{ 
-    if ($isAdmin) 
-    {
-        "[" + (Get-Location) + "] # " 
-    } 
-    else 
-    {
-        "[" + (Get-Location) + "] $ "
-    }
+function prompt { 
+    $location = if ($isAdmin) { "[{0}] # " -f (Get-Location) } else { "[{0}] $ " -f (Get-Location) }
+    Write-Output $location
 }
 
 $Host.UI.RawUI.WindowTitle = "PowerShell {0}" -f $PSVersionTable.PSVersion.ToString()
-if ($isAdmin) 
-{
+if ($isAdmin) {
     $Host.UI.RawUI.WindowTitle += " [ADMIN]"
 }
 
-# Does the the rough equivalent of dir /s /b. For example, dirs *.png is dir /s /b *.png
-function dirs 
-{
-    if ($args.Count -gt 0) 
-    {
-        Get-ChildItem -Recurse -Include "$args" | Foreach-Object FullName
-    } 
-    else 
-    {
-        Get-ChildItem -Recurse | Foreach-Object FullName
+# The rough equivalent of dir /s /b. For example, dirs *.png is dir /s /b *.png
+function dirs {
+    $results = @()
+
+    if ($args.Count -gt 0) {
+        $results = Get-ChildItem -Recurse -Include $args | ForEach-Object { $_.FullName }
+    } else {
+        $results = Get-ChildItem -Recurse | ForEach-Object { $_.FullName }
     }
+
+    $results | ForEach-Object {
+        Write-Output $_
+    }
+
+    Write-Output "Counter: $($results.Count)"  # Output the amount of directories
 }
 
-# Simple function to start a new elevated process. If arguments are supplied then 
-# a single command is started with admin rights; if not then a new admin instance
+# Simple function to start a new elevated process. If arguments are supplied, then 
+# a single command is started with admin rights; if not, then a new admin instance
 # of PowerShell is started.
-function admin 
-{
-    if ($args.Count -gt 0) 
-    {   
-        $argList = "& '" + $args + "'"
-        Start-Process "$psHome\pwsh.exe" -Verb runAs -ArgumentList $argList
-    } 
-    else 
-    {
-        Start-Process pwsh -Verb runAs -ArgumentList $argList
+function admin {
+    $argList = ""
+
+    if ($args.Count -gt 0) {   
+        $argList = "& '$args'"
+        Start-Process -FilePath "$psHome\pwsh.exe" -Verb runAs -ArgumentList $argList
+    } else {
+        Start-Process -FilePath 'pwsh' -Verb runAs -ArgumentList $argList
     }
 }
 
@@ -91,27 +84,21 @@ function admin
 Set-Alias -Name su -Value admin
 Set-Alias -Name sudo -Value admin
 
-
 # Make it easy to edit this profile once it's installed
-function Edit-Profile 
-{
-    if ($host.Name -match "ise") 
-{
+function Edit-Profile {
+    if ($host.Name -match "ise") {
         $psISE.CurrentPowerShellTab.Files.Add($profile.CurrentUserAllHosts)
-    } 
-    else 
-    {
-        n $profile
+    } else {
+        Start-Process $profile
     }
 }
 
-# We don't need these any more; they were just temporary variables to get to $isAdmin. 
+# We don't need these anymore; they were just temporary variables to get to $isAdmin. 
 # Delete them to prevent cluttering up the user profile. 
 Remove-Variable identity
 Remove-Variable principal
 
-Function Test-CommandExists 
-{
+function Test-CommandExists {
     Param ($command)
     $oldPreference = $ErrorActionPreference
     $ErrorActionPreference = 'stop'
@@ -119,13 +106,9 @@ Function Test-CommandExists
     Catch { Write-Host "$command does not exist"}
     Finally { $ErrorActionPreference = $oldPreference }
 } 
-#
+
 # Aliases
-#
-# If your favorite editor is not here, add an elseif and ensure that the directory it is installed in exists in your $env:Path
-#
-if (Test-CommandExists nvim) 
-{
+if (Test-CommandExists nvim) {
     $EDITOR='nvim'
 } elseif (Test-CommandExists pvim) {
     $EDITOR='pvim'
@@ -147,62 +130,78 @@ Set-Alias -Name ff -Value Find-File
 
 function ll { Get-ChildItem -Path $pwd -File }
 function g { Set-Location $HOME\Documents\Github }
-function gcom 
-{
+function gcom {
     git add .
     git commit -m "$args"
 }
-function lazyg 
-{
+function lazyg {
     git add .
     git commit -m "$args"
     git push
 }
-function Get-PubIP 
-{
+function Get-PubIP {
     (Invoke-WebRequest http://ifconfig.me/ip ).Content
 }
-function uptime 
-{
-    #Windows Powershell only
-	If ($PSVersionTable.PSVersion.Major -eq 5) 
-        {
-		Get-WmiObject win32_operatingsystem | Select csname, @{LABEL='LastBootUpTime'; 
+function uptime {
+    # Windows PowerShell only
+    if ($PSVersionTable.PSVersion.Major -eq 5) {
+        Get-WmiObject win32_operatingsystem | Select csname, @{LABEL='LastBootUpTime'; 
                 EXPRESSION={ $_.ConverttoDateTime($_.lastbootuptime)}} 
-	} 
-        Else 
-        {
+    } else {
         net statistics workstation | Select-String "sedan" | foreach-object {$_.ToString().Replace('Statistik sedan', '')}
- 
         New-TimeSpan (Get-uptime -Since) | Select-Object -Property Days, Hours, Minutes, Seconds
-        
-        }
+    }
 }
  
 function reload-profile {
     . $PROFILE
 }
-function Find-File($name) 
-{
+function Find-File($name) {
     Get-ChildItem -recurse -filter "*${name}*" -ErrorAction SilentlyContinue | ForEach-Object {
-        $place_path = $_.directory
-        Write-Output "${place_path}/${_}"
+        Write-Output "$($_.directory)/$($_)"
     }
 }
-function unzip ($file) {
-    Write-Output("Extracting", $file, "to", $pwd)
-    $fullFile = Get-ChildItem -Path $pwd -Filter .\cove.zip | ForEach-Object { $_.FullName }
-    Expand-Archive -Path $fullFile -DestinationPath $pwd
+function unzip {
+    param (
+        [string]$source,
+        [string]$destination = $PWD
+    )
+
+    Write-Output "Extracting $source to $destination"
+
+    # Check if the source file exists
+    $fullPath = Join-Path $PWD $source
+    if (-not (Test-Path $fullPath -PathType Leaf)) {
+        Write-Host "Source file not found: $fullPath" -ForegroundColor Red
+        return
+    }
+
+    # Check if the destination folder exists, create it if not
+    if (-not (Test-Path $destination -PathType Container)) {
+        New-Item -ItemType Directory -Force -Path $destination | Out-Null
+    }
+
+    # Unzip the contents
+    try {
+        Compress-Archive -Path $fullPath -DestinationPath $destination -Force -ErrorAction Stop
+        Write-Output "Extraction successful"
+    }
+    catch {
+        Write-Host "Extraction failed: $_" -ForegroundColor Red
+    }
 }
 function ix ($file) {
     curl.exe -F "f:1=@$file" ix.io
 }
 function grep($regex, $dir) {
-    if ( $dir ) {
-        Get-ChildItem $dir | select-string $regex
-        return
+    if ($dir) {
+        Get-ChildItem $dir | ForEach-Object {
+            Get-Content $_.FullName | Select-String $regex
+        }
     }
-    $input | select-string $regex
+    else {
+        Get-Content $regex | Select-String $regex  
+    }
 }
 function touch($file) {
     "" | Out-File $file -Encoding ASCII
@@ -253,7 +252,5 @@ if (Test-Path($ChocolateyProfile)) {
 
 Invoke-Expression (& { (zoxide init powershell | Out-String) })
 
-
 ## Final Line to set prompt
 oh-my-posh init pwsh --config https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/kali.omp.json | Invoke-Expression
-
