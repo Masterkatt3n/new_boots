@@ -224,6 +224,9 @@ function pkill($name) {
 function pgrep($name) {
     Get-Process $name
 }
+function reboot {
+    Restart-Computer -Force
+}
 function gwu {
     get-windowsupdate -verbose
 }
