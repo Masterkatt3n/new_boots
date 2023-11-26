@@ -15,8 +15,7 @@ Select any CaskaydiaCove Font to your liking in the Font face meny. I use "Caska
 The visuals in the Terminal should be fixed when started up again.
 If you wish to choose your own PoshTheme, enter the command <Get-PoshThemes> to browse all available in Powershell 7 when all is done. 
 How to change themes can be found at the end inside the default PS-profile, and is also where to input the theme you chosen.  
-
-Change the file extension on both files from .txt to .ps1, execute the script by rightclick install.ps1, "run with powershell". 
+Execute the script by rightclick install.ps1, "run with powershell". 
 
 
 Thx to Chris Titus. 
