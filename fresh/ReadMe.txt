@@ -1,12 +1,12 @@
 A script to automize application and program installations, intended mostly for fresh Windows installations with a feature debloating most preinstalled apps.
 
-The folder NEEDS to be placed in the root directory!! 
-If root isnt't "c:", the driveletter needs to be switched in the script.
+The folder NEEDS to be placed in the root directory!!
+If you have to create a new one, make sure to name it "fresh". If root isnt't "c:", the driveletter in install.ps1 needs to change accordingly.
 
 Make changes or add to the list of applications in the install script and read both before running.
 
 To get the Oh-My-Posh module to work properly, changes to the Font Settings need to be made in Windows Terminal. 
-AutoHotkey is needed for Chocolatey to run properly, it's already in the lists of applications to download.  
+AutoHotkey is needed for Chocolatey to run , it's already in the lists of applications to download.  
 
 Enter the settings by clicking the icon next to the "new tab" in the Terminal, or press <Crtl+,>.
 

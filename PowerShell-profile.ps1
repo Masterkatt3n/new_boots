@@ -154,7 +154,17 @@ function uptime {
 }
  
 function reload-profile {
-    . $PROFILE
+    Write-Host "Reloading profile..."
+    #Write-Host "Current execution policy: $(Get-ExecutionPolicy)"
+    #Write-Host "Current profile location: $PROFILE"
+    
+    try {
+        . $PROFILE
+        Write-Host "Profile reloaded successfully."
+    }
+    catch {
+        Write-Host "Error reloading profile: $_"
+    }
 }
 function Find-File($name) {
     Get-ChildItem -recurse -filter "*${name}*" -ErrorAction SilentlyContinue | ForEach-Object {
@@ -193,14 +203,44 @@ function unzip {
 function ix ($file) {
     curl.exe -F "f:1=@$file" ix.io
 }
-function grep($regex, $dir) {
-    if ($dir) {
-        Get-ChildItem $dir | ForEach-Object {
-            Get-Content $_.FullName | Select-String $regex
+function grep {
+    param (
+        [Parameter(Mandatory=$true, Position=0)]
+        [string]$regex,
+
+        [Parameter(Position=1)]
+        [string]$dir
+    )
+
+    try {
+        if ($dir) {
+            $files = Get-ChildItem $dir -File
+            if ($files.Count -eq 0) {
+                Write-Host "No files found in the specified directory."
+                return
+            }
+            $files | ForEach-Object {
+                try {
+                    Get-Content $_.FullName -ErrorAction Stop | Select-String $regex
+                }
+                catch {
+                    Write-Host "Error reading file $($_.FullName): $_"
+                }
+            }
+        }
+        else {
+            Get-ChildItem | ForEach-Object {
+                try {
+                    Get-Content $_.FullName -ErrorAction Stop | Select-String $regex
+                }
+                catch {
+                    Write-Host "Error reading file $($_.FullName): $_"
+                }
+            }
         }
     }
-    else {
-        Get-Content $regex | Select-String $regex  
+    catch {
+        Write-Host "Error: $_"
     }
 }
 function touch($file) {
