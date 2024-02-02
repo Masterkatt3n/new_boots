@@ -53,7 +53,6 @@ else {
 
 Write-Host "=================================="
 
-
 # ======================================================================
 # DEBLOATING PREINSTALLED TRASH
 # ======================================================================
@@ -108,7 +107,8 @@ Write-Host "=================================="
 Write-Host "Initiating selected applications installation..."
 
 # List of applications for Winget to install, check your own installed packages managed by winget in PowerShell with the command <WinGet List>
-# Mark any listed with <#> to skip that application.
+# Mark any listed with <#> to skip that application. 
+#!! MAKE SURE NO <,> is present at the end of the last App !!
 
 $AppsToInstall = @(
     # "Brave.Brave",
@@ -120,17 +120,25 @@ $AppsToInstall = @(
     # "TechPowerUp.NVCleanstall",
     # "TheDocumentFoundation.LibreOffice",
     # "PuTTY.PuTTY",
-     "AutoHotkey.AutoHotkey"
+     "AutoHotkey.AutoHotkey" 
     # "REALiX.HWiNFO",
     # "Microsoft.WindowsTerminal",
     # "Giorgiotani.Peazip",
     # "Resplendence.WhoCrashed",
     # "Microsoft.Sysinternals.TCPView",
     # "Sandboxie.Plus",
+	# "Microsoft.DotNet.SDK.6",
+    # "Microsoft.DotNet.DesktopRuntime.6",
+    # "Microsoft.DotNet.AspNetCore.6",
+    # "Microsoft.DotNet.Runtime.6"
+    # "Microsoft.DotNet.SDK.7",
+    # "Microsoft.DotNet.DesktopRuntime.7",
+    # "Microsoft.DotNet.AspNetCore.7",
+    # "Microsoft.DotNet.Runtime.7",
     # "Microsoft.DotNet.SDK.8",
     # "Microsoft.DotNet.DesktopRuntime.8",
     # "Microsoft.DotNet.AspNetCore.8",
-    # "Microsoft.DotNet.Runtime.8",
+    # "Microsoft.DotNet.Runtime.8",	
     # "Neovim.Neovim",
     # "Git.Git",
     # "Discord.Discord",
@@ -142,9 +150,13 @@ $AppsToInstall = @(
     # "Wagnardsoft.DisplayDriverUninstaller",
 )
 
+# Downloading G-helper, light-running ASUS mobos drivers substitute. 
+(New-Object System.Net.WebClient).DownloadFile('https://github.com/seerge/g-helper/releases/latest/download/GHelper.zip', 'C:\GHelper.zip')
+
 foreach ($AppToInstall in $AppsToInstall) {
     winget install --id=$AppToInstall -e -h --accept-package-agreements --accept-source-agreements
 }
+
 Write-Host "=============================================================="
 Write-Host "Cleaning and Installation finished, switching over to Pwsh..."
 Write-Host "=============================================================="

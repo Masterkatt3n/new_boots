@@ -118,6 +118,8 @@ if (Test-CommandExists nvim) {
     $EDITOR='vi'
 } elseif (Test-CommandExists code) {
     $EDITOR='code'
+} elseif (Test-CommandExists vscode) {
+    $EDITOR='vscode'	
 } elseif (Test-CommandExists notepad) {
     $EDITOR='notepad'
 } elseif (Test-CommandExists notepad++) {
@@ -125,7 +127,7 @@ if (Test-CommandExists nvim) {
 } elseif (Test-CommandExists sublime_text) {
     $EDITOR='sublime_text'
 }
-Set-Alias -Name vim -Value $EDITOR
+Set-Alias -Name nvim -Value $EDITOR
 Set-Alias -Name ff -Value Find-File
 
 function ll { Get-ChildItem -Path $pwd -File }
@@ -145,7 +147,7 @@ function Get-PubIP {
 function uptime {
     # Windows PowerShell only
     if ($PSVersionTable.PSVersion.Major -eq 5) {
-        Get-WmiObject win32_operatingsystem | Select csname, @{LABEL='LastBootUpTime'; 
+        Get-WmiObject win32_operatingsystem | Select-Object csname, @{LABEL='LastBootUpTime'; 
                 EXPRESSION={ $_.ConverttoDateTime($_.lastbootuptime)}} 
     } else {
         net statistics workstation | Select-String "sedan" | foreach-object {$_.ToString().Replace('Statistik sedan', '')}
@@ -153,9 +155,9 @@ function uptime {
     }
 }
  
-function reload-profile {
+function update-profile {
     Write-Host "Reloading profile..."
-    #Write-Host "Current execution policy: $(Get-ExecutionPolicy)"
+    Write-Host "Current execution policy: $(Get-ExecutionPolicy)"
     #Write-Host "Current profile location: $PROFILE"
     
     try {
@@ -282,8 +284,100 @@ function wuh {
 function wul {
     Get-WULastResults
 }
+function Get-ItemProbabilities {
+    param (
+        [double]$drawRate5Star = 0.05,
+        [int]$numberOf5StarItems = 8,
+        [int]$orbsPerPull = 15
+    )
 
-# Import the Chocolatey Profile that contains the necessary code to enable
+    # Calculate probability of getting a 5-star item
+    function Calculate5StarProbability {
+        param (
+            [double]$drawRate,
+            [int]$numberOfItems
+        )
+
+        $probability = $drawRate / $numberOfItems
+        return $probability
+    }
+
+    $probability5Star = Calculate5StarProbability $drawRate5Star $numberOf5StarItems
+
+    # Simulate attempts to get a 5-star item
+    $cumulativeCost = 0
+    $attempts = 0
+
+    while ($true) {
+        $attempts++
+        $cumulativeCost += $orbsPerPull
+
+        # Generate a random number with more precision
+        $randomNumber = (Get-Random -Minimum 0 -Maximum 100) / 100
+
+        if ($randomNumber -le $probability5Star) {
+            # Successfully obtained a 5-star item
+            Write-Host "Successfully obtained a 5-star item in $attempts attempts."
+            Write-Host "Cumulative cost to get a 5-star item: $cumulativeCost orbs"
+            break
+        }
+    }
+}
+function Get-Specific5StarItem {
+    param (
+        [double]$drawRate5Star = 0.05,
+        [double]$drawRateSpecific5Star = 0.01, # Adjust this to the specific item's draw rate
+        [int]$numberOf5StarItems = 8,
+        [int]$numberOfSpecific5StarItems = 1, # Number of specific 5-star items
+        [int]$orbsPerPull = 15
+    )
+
+    # Calculate probabilities of getting a 5-star item and the specific 5-star item
+    function Calculate5StarProbabilities {
+        param (
+            [double]$drawRate,
+            [double]$drawRateSpecific,
+            [int]$numberOfItems,
+            [int]$numberOfSpecificItems
+        )
+
+        $probability5Star = $drawRate / $numberOfItems
+        $probabilitySpecific5Star = $drawRateSpecific * $probability5Star * $numberOfSpecificItems
+        return $probability5Star, $probabilitySpecific5Star
+    }
+
+    $probability5Star, $probabilitySpecific5Star = Calculate5StarProbabilities $drawRate5Star $drawRateSpecific5Star $numberOf5StarItems $numberOfSpecific5StarItems
+
+    # Simulate attempts to get a 5-star item and the specific 5-star item
+    $cumulativeCost = 0
+    $attempts = 0
+
+    while ($true) {
+        $attempts++
+        $cumulativeCost += $orbsPerPull
+
+        $randomNumber = (Get-Random -Minimum 0 -Maximum 100) / 100
+
+        if ($randomNumber -le $probabilitySpecific5Star) {
+            # Successfully obtained the specific 5-star item
+            Write-Host "Successfully obtained the specific 5-star item in $attempts attempts."
+            Write-Host "Cumulative cost to get the specific 5-star item: $cumulativeCost orbs"
+            break
+        }
+
+        if ($randomNumber -le $probability5Star) {
+            # Successfully obtained a generic 5-star item
+            Write-Host "Successfully obtained a 5-star item (not the specific one) in $attempts attempts."
+            Write-Host "Cumulative cost to get a 5-star item: $cumulativeCost orbs"
+            break
+        }
+    }
+}
+function vscode {
+ Start-Process -Path "C:\Users\steADM\AppData\Local\Programs\VSCodium\VSCodium.exe"
+}
+	
+# Import the ChocolateyProfile that contains the necessary code to enable
 # tab-completions to function for `choco`.
 # Be aware that if you are missing these lines from your profile, tab completion
 # for `choco` will not function.
