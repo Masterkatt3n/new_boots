@@ -150,12 +150,12 @@ $AppsToInstall = @(
     # "Wagnardsoft.DisplayDriverUninstaller",
 )
 
-# Downloading G-helper, light-running ASUS mobos drivers substitute. 
-(New-Object System.Net.WebClient).DownloadFile('https://github.com/seerge/g-helper/releases/latest/download/GHelper.zip', 'C:\GHelper.zip')
-
 foreach ($AppToInstall in $AppsToInstall) {
     winget install --id=$AppToInstall -e -h --accept-package-agreements --accept-source-agreements
 }
+
+# Downloading G-helper, light-running ASUS mobos drivers substitute. 
+(New-Object System.Net.WebClient).DownloadFile('https://github.com/seerge/g-helper/releases/latest/download/GHelper.zip', 'C:\GHelper.zip')
 
 Write-Host "=============================================================="
 Write-Host "Cleaning and Installation finished, switching over to Pwsh..."
@@ -166,7 +166,7 @@ Write-Host "=============================================================="
 # for proper execution.          
 #  Chris Titus Tech's Windows Utility application to further debloat and tweaking Windows.
 # If not needed, mark the command with a <#>, save any changes done to the script and press
-# "run in PowerShell" by right-clicking install.ps1
+# 'run in PowerShell' by right-clicking install.ps1
 Start-Process pwsh.exe -Verb RunAs -Windowstyle Normal "-file c:\fresh\pwsh.ps1"
 
 # THE END
