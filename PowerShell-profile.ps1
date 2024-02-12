@@ -373,11 +373,131 @@ function Get-Specific5StarItem {
         }
     }
 }
-function vscode {
- Start-Process -Path "C:\Users\steADM\AppData\Local\Programs\VSCodium\VSCodium.exe"
+function start-yatzy {
+# Define a class for Dice
+  class Dice {
+      [int]$value
+
+      Dice() {
+          $this.value = Get-Random -Minimum 1 -Maximum 6
+      }
+
+      [int] getValue() {
+          return $this.value
+      }
+
+      [void] roll() {
+          $this.value = Get-Random -Minimum 1 -Maximum 6
+      }
+  } 
+
+# Define a class for Player
+  class Player {
+      [string]$name
+      [int[]]$score = @(-1) * 13
+
+      Player([string]$n) {
+          $this.name = $n
+      }
+
+      [string] getName() {
+          return $this.name
+      }
+
+      [int] getScore([int]$category) {
+          return $this.score[$category]
+      }
+
+      [void] setScore([int]$category, [int]$points) {
+          $this.score[$category] = $points
+      }
+
+      [int] getTotalScore() {
+          $total = 0
+          foreach ($points in $this.score) {
+              if ($points -ne -1) {
+                  $total += $points
+              }
+          }
+          return $total
+      }
+  }
+
+  # Define a class for the game
+  class Game {
+      [Dice[]]$dice = @([Dice]::new()) * 5
+      [Player[]]$players = @()
+      [bool[]]$hold = @($false) * 5
+      [int]$round = 0
+      [int]$turn = 0
+
+          Game([string]$n1, [string]$n2) {
+        $this.players += [Player]::new($n1)
+        $this.players += [Player]::new($n2)
+        $this.dice = @()
+        for ($i = 0; $i -lt 5; $i++) {
+            $this.dice += [Dice]::new()
+      }
+  }
+
+
+   [void] rollDice() {
+    Write-Host "Rolling dice..."
+    foreach ($i in 0..4) {
+        Write-Host "Rolling die $i..."
+        if (-not $this.hold[$i]) {
+            $this.dice[$i].roll()
+      }
+  }
 }
-	
-# Import the ChocolateyProfile that contains the necessary code to enable
+
+
+      [int] getDiceValue([int]$index) {
+          return $this.dice[$index].getValue()
+      }
+
+      [void] chooseDice([int]$index) {
+          $this.hold[$index] = -not $this.hold[$index]
+      }
+
+      [bool] isHeld([int]$index) {
+          return $this.hold[$index]
+      }
+
+      [int] countScore([int]$category) {
+          $points = 0
+          [int[]]$count = @(0) * 6
+
+          foreach ($die in $this.dice) {
+              $count[$die.getValue() - 1]++
+          }
+
+          if ($category -ge 0 -and $category -le 5) {
+              $points = $count[$category] * ($category + 1)
+          }
+          elseif ($category -eq 6) {
+              for ($i = 5; $i -ge 0; $i--) {
+                  if ($count[$i] -ge 2) {
+                      $points = ($i + 1) * 2
+                      break
+                  }
+              }
+          }
+          # Implement other categories similarly...
+
+          return $points
+      }
+ }
+
+# Example of usage
+$game = [Game]::new("Player1", "Player2")
+$game.rollDice()
+foreach ($die in $game.dice) {
+    Write-Host "Dice value: $($die.getValue())"
+ }	 
+}
+
+# Import the ChocolateyProfile that contains the necessary code to eable
 # tab-completions to function for `choco`.
 # Be aware that if you are missing these lines from your profile, tab completion
 # for `choco` will not function.
