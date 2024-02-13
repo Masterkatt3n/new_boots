@@ -373,13 +373,16 @@ function Get-Specific5StarItem {
         }
     }
 }
+function vscode {
+ Start-Process -Path "C:\Users\steADM\AppData\Local\Programs\VSCodium\VSCodium.exe"
+}
 function start-yatzy {
 # Define a class for Dice
   class Dice {
       [int]$value
 
       Dice() {
-          $this.value = Get-Random -Minimum 1 -Maximum 6
+          $this.value = Get-Random -Minimum 1 -Maximum 7
       }
 
       [int] getValue() {
@@ -387,7 +390,7 @@ function start-yatzy {
       }
 
       [void] roll() {
-          $this.value = Get-Random -Minimum 1 -Maximum 6
+          $this.value = Get-Random -Minimum 1 -Maximum 7
       }
   } 
 
@@ -490,12 +493,36 @@ function start-yatzy {
  }
 
 # Example of usage
-$game = [Game]::new("Player1", "Player2")
-$game.rollDice()
-foreach ($die in $game.dice) {
-    Write-Host "Dice value: $($die.getValue())"
- }	 
+
+# number of tests
+$trials = 100
+$results = @()
+
+# Run the simulation for the amount of tests
+for ($i = 1; $i -le $trials; $i++) {
+    $game = [Game]::new("Player1", "Player2")
+    $game.rollDice()
+    $results += $game.dice | ForEach-Object { $_.getValue() }
+ }
+
+# Output the results and count the values of each dice 
+$results | Group-Object | Sort-Object Name | ForEach-Object {
+    Write-Output "Dice value: $($_.Name), Count: $($_.Count)"
+ }
+
+# Output the total number of trials
+Write-Output "Total trials: $trials"
 }
+
+# Example of usage
+
+# Example of usage
+#$game = [Game]::new("Player1", "Player2")
+#$game.rollDice()
+#foreach ($die in $game.dice) {
+#    Write-Host "Dice value: $($die.getValue())"
+# }	 
+#}
 
 # Import the ChocolateyProfile that contains the necessary code to eable
 # tab-completions to function for `choco`.
