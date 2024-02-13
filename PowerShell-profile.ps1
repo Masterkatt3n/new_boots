@@ -513,7 +513,6 @@ Write-Output "Total trials: $trials"
 
 # Example of usage
 
-# Example of usage
 #$game = [Game]::new("Player1", "Player2")
 #$game.rollDice()
 #foreach ($die in $game.dice) {
