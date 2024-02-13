@@ -373,9 +373,6 @@ function Get-Specific5StarItem {
         }
     }
 }
-function vscode {
- Start-Process -Path "C:\Users\steADM\AppData\Local\Programs\VSCodium\VSCodium.exe"
-}
 function start-yatzy {
 # Define a class for Dice
   class Dice {
