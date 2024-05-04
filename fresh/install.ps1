@@ -23,6 +23,17 @@ Set-ExecutionPolicy Bypass -Scope Process
 #$ErrorActionPreference = 'SilentlyContinue'
 
 # ======================================================================
+# CHECK FOR WINGET UPDATES
+# ======================================================================
+Write-Host "Checking for WinGet updates..."
+$wingetUpdate = winget upgrade --noop
+if ($wingetUpdate -ne $null) {
+    Write-Host "WinGet updates available, installing..."
+    winget upgrade
+} else {
+    Write-Host "WinGet is up to date"
+}
+# ======================================================================
 # CHECK IF WINGET IS INSTALLED
 # ======================================================================
 Write-Host "Checking if Winget is Installed..."
@@ -111,7 +122,6 @@ Write-Host "Initiating selected applications installation..."
 #!! MAKE SURE NO <,> is present at the end of the last App !!
 
 $AppsToInstall = @(
-    # "Brave.Brave",
      "Microsoft.PowerShell" ,
     # "VideoLAN.VLC",
      "Notepad++.Notepad++",
@@ -153,12 +163,59 @@ $AppsToInstall = @(
 foreach ($AppToInstall in $AppsToInstall) {
     winget install --id=$AppToInstall -e -h --accept-package-agreements --accept-source-agreements
 }
+# Downloading Brave browser
+#(New-Object System.Net.WebClient).DownloadFile('https://laptop-updates.brave.com/latest/winx64', 'C:\BraveSetup.exe')
+
+# Installing Brave browser
+#Start-Process -FilePath 'C:\BraveSetup.exe' -ArgumentList '/silent' -Wait
 
 # Downloading G-helper, light-running ASUS mobos drivers substitute. 
-(New-Object System.Net.WebClient).DownloadFile('https://github.com/seerge/g-helper/releases/latest/download/GHelper.zip', 'C:\GHelper.zip')
+#(New-Object System.Net.WebClient).DownloadFile('https://github.com/seerge/g-helper/releases/latest/download/GHelper.zip', 'C:\GHelper.zip')
+
+Write-Host "==============================================================" 
+Write-Host "Applications done, getting drivers...
+Write-Host "=============================================================="
+#Download drivers, uncomment the method preferred.
+
+# Download auto installation
+
+# Download driver
+#$driverUrl = "https://example.com/driver.exe"
+#$driverPath = "C:\Downloads\driver.exe"
+#Invoke-WebRequest -Uri $driverUrl -OutFile $driverPath
+
+# Install driver
+#Start-Process -FilePath $driverPath -ArgumentList "/silent" -Wait
+
+#===================================
+
+# Only downloading, manual installation
+
+# Download drivers to a specified location
+#$driverUrls = @{
+#    "Graphics" = "https://example.com/graphics_driver.exe"
+#    "Network" = "https://example.com/network_driver.exe"
+#    # Add more driver URLs as needed
+#}
+
+#$downloadDirectory = "C:\Downloads\Drivers"
+#if (-not (Test-Path -Path $downloadDirectory)) {
+#    New-Item -Path $downloadDirectory -ItemType Directory
+#}
+
+#foreach ($driverType in $driverUrls.Keys) {
+#    $driverUrl = $driverUrls[$driverType]
+#    $driverFileName = Split-Path $driverUrl -Leaf
+#    $driverFilePath = Join-Path -Path $downloadDirectory -ChildPath $driverFileName
+#
+#    Write-Host "Downloading $driverType driver..."
+#    Invoke-WebRequest -Uri $driverUrl -OutFile $driverFilePath
+#}
+
+#Write-Host "Driver download completed."
 
 Write-Host "=============================================================="
-Write-Host "Cleaning and Installation finished, switching over to Pwsh..."
+Write-Host "Installations done and trash gone, switching over to Pwsh..."
 Write-Host "=============================================================="
 
 # Next command will start another script to customize the environment in PowerShell 7
@@ -169,4 +226,6 @@ Write-Host "=============================================================="
 # 'run in PowerShell' by right-clicking install.ps1
 Start-Process pwsh.exe -Verb RunAs -Windowstyle Normal "-file c:\fresh\pwsh.ps1"
 
-# THE END
+##THE END#
+##########
+
