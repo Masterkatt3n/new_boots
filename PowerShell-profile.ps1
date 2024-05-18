@@ -2,19 +2,43 @@
 ### Version 1.03 - Tim Sneath <tim@sneath.org>
 ### From https://gist.github.com/timsneath/19867b12eee7fd5af2ba
 
-# Import Terminal Icons
+# Initial GitHub.com connectivity check with 1 second timeout
+$canConnectToGitHub = Test-Connection github.com -Count 1 -Quiet -TimeoutSeconds 1
+
+# Import Modules and External Profiles
+# Ensure Terminal-Icons module is installed before importing
+if (-not (Get-Module -ListAvailable -Name Terminal-Icons)) {
+    Install-Module -Name Terminal-Icons -Scope CurrentUser -Force -SkipPublisherCheck
+}
 Import-Module -Name Terminal-Icons
+$ChocolateyProfile = "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
+if (Test-Path($ChocolateyProfile)) {
+    Import-Module "$ChocolateyProfile"
+}
 
-# Find out if the current user identity is elevated (has admin rights)
-$identity = [Security.Principal.WindowsIdentity]::GetCurrent()
-$principal = New-Object Security.Principal.WindowsPrincipal $identity
-$isAdmin = $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+# Check for Profile Updates
+function Update-Profile {
+    if (-not $global:canConnectToGitHub) {
+        Write-Host "Skipping profile update check due to GitHub.com not responding within 1 second." -ForegroundColor Yellow
+        return
+    }
 
-# If so and the current host is a command line, then change to red color 
-# as a warning to the user that they are operating in an elevated context
-# Useful shortcuts for traversing directories
-function cd... { Set-Location ..\.. }
-function cd.... { Set-Location ..\..\.. }
+    try {
+        $url = "https://raw.githubusercontent.com/Masterkatt3n/new_boots/main/PowerShell-profile.ps1"
+        $oldhash = Get-FileHash $PROFILE
+        Invoke-RestMethod $url -OutFile "$env:temp/Microsoft.PowerShell_profile.ps1"
+        $newhash = Get-FileHash "$env:temp/Microsoft.PowerShell_profile.ps1"
+        if ($newhash.Hash -ne $oldhash.Hash) {
+            Copy-Item -Path "$env:temp/Microsoft.PowerShell_profile.ps1" -Destination $PROFILE -Force
+            Write-Host "Profile has been updated. Please restart your shell to reflect changes" -ForegroundColor Magenta
+        }
+    } catch {
+        Write-Error "Unable to check for `$profile updates"
+    } finally {
+        Remove-Item "$env:temp/Microsoft.PowerShell_profile.ps1" -ErrorAction SilentlyContinue
+    }
+}
+Update-Profile
 
 # Compute file hashes - useful for checking successful downloads 
 function md5 { Get-FileHash -Algorithm MD5 $args }
@@ -29,14 +53,11 @@ function HKLM: { Set-Location HKLM: }
 function HKCU: { Set-Location HKCU: }
 function Env: { Set-Location Env: }
 
-# Creates a drive shortcut for Work Folders if the current user account is using it
-if (Test-Path "$env:USERPROFILE\Work Folders") {
-    New-PSDrive -Name Work -PSProvider FileSystem -Root "$env:USERPROFILE\Work Folders" -Description "Work Folders"
-    function Work: { Set-Location Work: }
-}
+# Find out if the current user identity is elevated (has admin rights)
+$identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+$principal = New-Object Security.Principal.WindowsPrincipal $identity
+$isAdmin = $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 
-# Set up the command prompt and window title. Use UNIX-style conventions for identifying 
-# whether the user is elevated (root) or not. Window title shows the current version of PowerShell
 # and appends [ADMIN] if appropriate for easy taskbar identification
 function prompt { 
     $location = if ($isAdmin) { "[{0}] # " -f (Get-Location) } else { "[{0}] $ " -f (Get-Location) }
@@ -78,69 +99,103 @@ function admin {
         Start-Process -FilePath 'pwsh' -Verb runAs -ArgumentList $argList
     }
 }
+function Update-PowerShell {
+    if (-not $global:canConnectToGitHub) {
+        Write-Host "Skipping PowerShell update check due to GitHub.com not responding within 1 second." -ForegroundColor Yellow
+        return
+    }
 
-# Set UNIX-like aliases for the admin command, so sudo <command> will run the command
-# with elevated rights. 
-Set-Alias -Name su -Value admin
-Set-Alias -Name sudo -Value admin
+    try {
+        Write-Host "Checking for PowerShell updates..." -ForegroundColor Cyan
+        $updateNeeded = $false
+        $currentVersion = $PSVersionTable.PSVersion.ToString()
+        $gitHubApiUrl = "https://api.github.com/repos/PowerShell/PowerShell/releases/latest"
+        $latestReleaseInfo = Invoke-RestMethod -Uri $gitHubApiUrl
+        $latestVersion = $latestReleaseInfo.tag_name.Trim('v')
+        if ($currentVersion -lt $latestVersion) {
+            $updateNeeded = $true
+        }
+
+        if ($updateNeeded) {
+            Write-Host "Updating PowerShell..." -ForegroundColor Yellow
+            winget upgrade "Microsoft.PowerShell" --accept-source-agreements --accept-package-agreements
+            Write-Host "PowerShell has been updated. Please restart your shell to reflect changes" -ForegroundColor Magenta
+        }
+        else {
+            Write-Host "Your PowerShell is up to date." -ForegroundColor Green
+        }
+    }
+    catch {
+        Write-Error "Failed to update PowerShell. Error: $_"
+    }
+}
+Update-PowerShell
 
 # Make it easy to edit this profile once it's installed
 function Edit-Profile {
-    if ($host.Name -match "ise") {
-        $psISE.CurrentPowerShellTab.Files.Add($profile.CurrentUserAllHosts)
-    } else {
-        Start-Process $profile
-    }
+     notepad++ $PROFILE.CurrentUserAllHosts
 }
+
+#function Edit-Profile {
+#    if ($host.Name -match "ise") {
+#        $psISE.CurrentPowerShellTab.Files.Add($profile.CurrentUserAllHosts)
+#    } else {
+#        Start-Process $profile
+#    }
+#}
 
 # We don't need these anymore; they were just temporary variables to get to $isAdmin. 
 # Delete them to prevent cluttering up the user profile. 
 Remove-Variable identity
 Remove-Variable principal
 
-function Test-CommandExists {
-    Param ($command)
-    $oldPreference = $ErrorActionPreference
-    $ErrorActionPreference = 'stop'
-    try { if (Get-Command $command) { RETURN $true }}
-    Catch { Write-Host "$command does not exist"}
-    Finally { $ErrorActionPreference = $oldPreference }
-} 
+#function Test-CommandExists {
+#    Param ($command)
+#    $oldPreference = $ErrorActionPreference
+#    $ErrorActionPreference = 'stop'
+#    try { if (Get-Command $command) { RETURN $true }}
+#    Catch { Write-Host "$command does not exist"}
+#    Finally { $ErrorActionPreference = $oldPreference }
+#} 
 
-# Aliases
-if (Test-CommandExists nvim) {
-    $EDITOR='nvim'
-} elseif (Test-CommandExists pvim) {
-    $EDITOR='pvim'
-} elseif (Test-CommandExists vim) {
-    $EDITOR='vim'
-} elseif (Test-CommandExists vi) {
-    $EDITOR='vi'
-} elseif (Test-CommandExists code) {
-    $EDITOR='code'
-} elseif (Test-CommandExists vscode) {
-    $EDITOR='vscode'	
-} elseif (Test-CommandExists notepad) {
-    $EDITOR='notepad'
-} elseif (Test-CommandExists notepad++) {
-    $EDITOR='notepad++'
-} elseif (Test-CommandExists sublime_text) {
-    $EDITOR='sublime_text'
+function Test-CommandExists {
+    param($command)
+    $exists = $null -ne (Get-Command $command -ErrorAction SilentlyContinue)
+    return $exists
 }
-Set-Alias -Name nvim -Value $EDITOR
+
+# Editor Configuration
+$EDITOR = if (Test-CommandExists nvim) { 'nvim' }
+elseif (Test-CommandExists pvim) { 'pvim' }
+elseif (Test-CommandExists vim) { 'vim' }
+elseif (Test-CommandExists vi) { 'vi' }
+elseif (Test-CommandExists vscodium) { 'vscodium' }
+elseif (Test-CommandExists notepad++) { 'notepad++' }
+elseif (Test-CommandExists sublime_text) { 'sublime_text' }
+else { 'notepad' }
+#}
+Set-Alias -Name notepad++ -Value $EDITOR
 Set-Alias -Name ff -Value Find-File
 
-function ll { Get-ChildItem -Path $pwd -File }
-function g { Set-Location $HOME\Documents\Github }
-function gcom {
-    git add .
-    git commit -m "$args"
+function pgrep($name) {
+    Get-Process $name
 }
-function lazyg {
-    git add .
-    git commit -m "$args"
-    git push
+
+function head {
+    param($Path, $n = 10)
+    Get-Content $Path -Head $n
 }
+
+function tail {
+    param($Path, $n = 10)
+    Get-Content $Path -Tail $n
+}
+# Navigation Shortcuts
+function docs { Set-Location -Path $HOME\Documents }
+
+function dtop { Set-Location -Path $HOME\Desktop }
+
+# Network
 function Get-PubIP {
     (Invoke-WebRequest http://ifconfig.me/ip ).Content
 }
@@ -154,15 +209,21 @@ function uptime {
         New-TimeSpan (Get-uptime -Since) | Select-Object -Property Days, Hours, Minutes, Seconds
     }
 }
- 
-function update-profile {
+# Enhanced Listing
+function la { Get-ChildItem -Path . -Force | Format-Table -AutoSize }
+function ll { Get-ChildItem -Path . -Force -Hidden | Format-Table -AutoSize } 
+
+# Quick Access to Editing the Profile     # HÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄR
+#function ep { notepad++ $PROFILE }
+
+function reload-profile {
     Write-Host "Reloading profile..."
     Write-Host "Current execution policy: $(Get-ExecutionPolicy)"
     #Write-Host "Current profile location: $PROFILE"
     
     try {
-        . $PROFILE
-        Write-Host "Profile reloaded successfully."
+         . $PROFILE
+       Write-Host "Profile reloaded successfully."
     }
     catch {
         Write-Host "Error reloading profile: $_"
@@ -269,6 +330,8 @@ function pgrep($name) {
 function reboot {
     Restart-Computer -Force
 }
+
+# PSWindowsUpdate aliases
 function gwu {
     get-windowsupdate -verbose
 }
@@ -284,6 +347,8 @@ function wuh {
 function wul {
     Get-WULastResults
 }
+
+# Game
 function Get-ItemProbabilities {
     param (
         [double]$drawRate5Star = 0.05,
@@ -373,152 +438,23 @@ function Get-Specific5StarItem {
         }
     }
 }
-function start-yatzy {
-# Define a class for Dice
-  class Dice {
-      [int]$value
+# Quick Access to System Information
+function sysinfo { Get-ComputerInfo }
 
-      Dice() {
-          $this.value = Get-Random -Minimum 1 -Maximum 7
-      }
+# Networking Utilities
+function flushdns { Clear-DnsClientCache }
 
-      [int] getValue() {
-          return $this.value
-      }
+# Clipboard Utilities
+function cpy { Set-Clipboard $args[0] }
 
-      [void] roll() {
-          $this.value = Get-Random -Minimum 1 -Maximum 7
-      }
-  } 
+function pst { Get-Clipboard }
 
-# Define a class for Player
-  class Player {
-      [string]$name
-      [int[]]$score = @(-1) * 13
-
-      Player([string]$n) {
-          $this.name = $n
-      }
-
-      [string] getName() {
-          return $this.name
-      }
-
-      [int] getScore([int]$category) {
-          return $this.score[$category]
-      }
-
-      [void] setScore([int]$category, [int]$points) {
-          $this.score[$category] = $points
-      }
-
-      [int] getTotalScore() {
-          $total = 0
-          foreach ($points in $this.score) {
-              if ($points -ne -1) {
-                  $total += $points
-              }
-          }
-          return $total
-      }
-  }
-
-  # Define a class for the game
-  class Game {
-      [Dice[]]$dice = @([Dice]::new()) * 5
-      [Player[]]$players = @()
-      [bool[]]$hold = @($false) * 5
-      [int]$round = 0
-      [int]$turn = 0
-
-          Game([string]$n1, [string]$n2) {
-        $this.players += [Player]::new($n1)
-        $this.players += [Player]::new($n2)
-        $this.dice = @()
-        for ($i = 0; $i -lt 5; $i++) {
-            $this.dice += [Dice]::new()
-      }
-  }
-
-
-   [void] rollDice() {
-    Write-Host "Rolling dice..."
-    foreach ($i in 0..4) {
-        Write-Host "Rolling die $i..."
-        if (-not $this.hold[$i]) {
-            $this.dice[$i].roll()
-      }
-  }
+# Enhanced PowerShell Experience
+Set-PSReadLineOption -Colors @{
+    Command   = 'Yellow'
+    Parameter = 'Green'
+    String    = 'DarkCyan'
 }
-
-
-      [int] getDiceValue([int]$index) {
-          return $this.dice[$index].getValue()
-      }
-
-      [void] chooseDice([int]$index) {
-          $this.hold[$index] = -not $this.hold[$index]
-      }
-
-      [bool] isHeld([int]$index) {
-          return $this.hold[$index]
-      }
-
-      [int] countScore([int]$category) {
-          $points = 0
-          [int[]]$count = @(0) * 6
-
-          foreach ($die in $this.dice) {
-              $count[$die.getValue() - 1]++
-          }
-
-          if ($category -ge 0 -and $category -le 5) {
-              $points = $count[$category] * ($category + 1)
-          }
-          elseif ($category -eq 6) {
-              for ($i = 5; $i -ge 0; $i--) {
-                  if ($count[$i] -ge 2) {
-                      $points = ($i + 1) * 2
-                      break
-                  }
-              }
-          }
-          # Implement other categories similarly...
-
-          return $points
-      }
- }
-
-# Example of usage
-
-# number of tests
-$trials = 100
-$results = @()
-
-# Run the simulation for the amount of tests
-for ($i = 1; $i -le $trials; $i++) {
-    $game = [Game]::new("Player1", "Player2")
-    $game.rollDice()
-    $results += $game.dice | ForEach-Object { $_.getValue() }
- }
-
-# Output the results and count the values of each dice 
-$results | Group-Object | Sort-Object Name | ForEach-Object {
-    Write-Output "Dice value: $($_.Name), Count: $($_.Count)"
- }
-
-# Output the total number of trials
-Write-Output "Total trials: $trials"
-}
-
-# Example of usage
-
-#$game = [Game]::new("Player1", "Player2")
-#$game.rollDice()
-#foreach ($die in $game.dice) {
-#    Write-Host "Dice value: $($die.getValue())"
-# }	 
-#}
 
 # Import the ChocolateyProfile that contains the necessary code to eable
 # tab-completions to function for `choco`.
@@ -530,7 +466,20 @@ if (Test-Path($ChocolateyProfile)) {
     Import-Module "$ChocolateyProfile"
 }
 
-Invoke-Expression (& { (zoxide init powershell | Out-String) })
 
 ## Final Line to set prompt
 oh-my-posh init pwsh --config https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/kali.omp.json | Invoke-Expression
+if (Get-Command zoxide -ErrorAction SilentlyContinue) {
+    Invoke-Expression (& { (zoxide init powershell | Out-String) })
+}
+else {
+    Write-Host "zoxide command not found. Attempting to install via winget..."
+    try {
+        winget install -e --id ajeetdsouza.zoxide
+        Write-Host "zoxide installed successfully. Initializing..."
+        Invoke-Expression (& { (zoxide init powershell | Out-String) })
+    }
+    catch {
+        Write-Error "Failed to install zoxide. Error: $_"
+    }
+}
