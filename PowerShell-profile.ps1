@@ -131,35 +131,10 @@ function Update-PowerShell {
 }
 Update-PowerShell
 
-# Make it easy to edit this profile once it's installed
-function Edit-Profile {
-     notepad++ $PROFILE.CurrentUserAllHosts
-}
-
-# Quick Access to Editing the Profile    
-function ep { notepad++ $PROFILE }
-
-#function Edit-Profile {
-#    if ($host.Name -match "ise") {
-#        $psISE.CurrentPowerShellTab.Files.Add($profile.CurrentUserAllHosts)
-#    } else {
-#        Start-Process $profile
-#    }
-#}
-
 # We don't need these anymore; they were just temporary variables to get to $isAdmin. 
 # Delete them to prevent cluttering up the user profile. 
 Remove-Variable identity
 Remove-Variable principal
-
-#function Test-CommandExists {
-#    Param ($command)
-#    $oldPreference = $ErrorActionPreference
-#    $ErrorActionPreference = 'stop'
-#    try { if (Get-Command $command) { RETURN $true }}
-#    Catch { Write-Host "$command does not exist"}
-#    Finally { $ErrorActionPreference = $oldPreference }
-#} 
 
 function Test-CommandExists {
     param($command)
@@ -176,8 +151,28 @@ elseif (Test-CommandExists vscodium) { 'vscodium' }
 elseif (Test-CommandExists notepad++) { 'notepad++' }
 elseif (Test-CommandExists sublime_text) { 'sublime_text' }
 else { 'notepad' }
-#}
+
+# Ensure `notepad++` is installed and accessible
+if (Test-CommandExists 'notepad++') {
+    $EDITOR = 'notepad++'
+} else {
+    # Fallback to another editor or install notepad++
+    Write-Host "Notepad++ not found. Falling back to 'notepad'."
+    $EDITOR = 'notepad'
+}
 Set-Alias -Name notepad++ -Value $EDITOR
+
+function Edit-Profile {
+    notepad++ $PROFILE.CurrentUserAllHosts
+}
+
+function ep {
+    notepad++ $PROFILE
+}
+
+# Reset cursor style to underscore after exiting `nvim`
+$Host.UI.RawUI.CursorType = 'Vintage'
+
 Set-Alias -Name ff -Value Find-File
 
 function pgrep($name) {
