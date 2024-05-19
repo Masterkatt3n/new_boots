@@ -458,7 +458,7 @@ function ep {
 }
 
 # Reset cursor style to underscore after exiting `nvim`
-$Host.UI.RawUI.CursorType = 'Underline'
+$Host.UI.RawUI.CursorType = "vintage"
 
 ## Final Line to set prompt
 oh-my-posh init pwsh --config https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/kali.omp.json | Invoke-Expression
