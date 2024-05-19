@@ -136,6 +136,9 @@ function Edit-Profile {
      notepad++ $PROFILE.CurrentUserAllHosts
 }
 
+# Quick Access to Editing the Profile    
+function ep { notepad++ $PROFILE }
+
 #function Edit-Profile {
 #    if ($host.Name -match "ise") {
 #        $psISE.CurrentPowerShellTab.Files.Add($profile.CurrentUserAllHosts)
@@ -213,13 +216,10 @@ function uptime {
 function la { Get-ChildItem -Path . -Force | Format-Table -AutoSize }
 function ll { Get-ChildItem -Path . -Force -Hidden | Format-Table -AutoSize } 
 
-# Quick Access to Editing the Profile     # HÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄR
-#function ep { notepad++ $PROFILE }
-
 function reload-profile {
     Write-Host "Reloading profile..."
     Write-Host "Current execution policy: $(Get-ExecutionPolicy)"
-    #Write-Host "Current profile location: $PROFILE"
+    Write-Host "Current profile location: $PROFILE"
     
     try {
          . $PROFILE
