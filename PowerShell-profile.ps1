@@ -440,21 +440,21 @@ if (Test-Path($ChocolateyProfile)) {
     Import-Module "$ChocolateyProfile"
 }
 # Ensure `notepad++` is installed and accessible
-if (Test-CommandExists 'notepad++') {
-    $EDITOR = 'notepad++'
+if (Test-CommandExists 'vscodium') {
+    $EDITOR = 'vscodium'
 } else {
     # Fallback to another editor or install notepad++
-    Write-Host "Notepad++ not found. Falling back to 'notepad'."
-    $EDITOR = 'notepad'
+    Write-Host "vscodium not found. Falling back to 'notepad'."
+    $EDITOR = 'vscodium'
 }
-Set-Alias -Name notepad++ -Value $EDITOR
+Set-Alias -Name vscodium -Value $EDITOR
 
 function Edit-Profile {
-    notepad++ $PROFILE.CurrentUserAllHosts
+    vscodium $PROFILE.CurrentUserAllHosts
 }
 
 function ep {
-    notepad++ $PROFILE
+    vscodium $PROFILE
 }
 
 ## Final Line to set prompt
