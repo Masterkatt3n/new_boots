@@ -152,27 +152,6 @@ elseif (Test-CommandExists notepad++) { 'notepad++' }
 elseif (Test-CommandExists sublime_text) { 'sublime_text' }
 else { 'notepad' }
 
-# Ensure `notepad++` is installed and accessible
-if (Test-CommandExists 'notepad++') {
-    $EDITOR = 'notepad++'
-} else {
-    # Fallback to another editor or install notepad++
-    Write-Host "Notepad++ not found. Falling back to 'notepad'."
-    $EDITOR = 'notepad'
-}
-Set-Alias -Name notepad++ -Value $EDITOR
-
-function Edit-Profile {
-    notepad++ $PROFILE.CurrentUserAllHosts
-}
-
-function ep {
-    notepad++ $PROFILE
-}
-
-# Reset cursor style to underscore after exiting `nvim`
-$Host.UI.RawUI.CursorType = 'Vintage'
-
 Set-Alias -Name ff -Value Find-File
 
 function pgrep($name) {
@@ -460,7 +439,26 @@ $ChocolateyProfile = "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
 if (Test-Path($ChocolateyProfile)) {
     Import-Module "$ChocolateyProfile"
 }
+# Ensure `notepad++` is installed and accessible
+if (Test-CommandExists 'notepad++') {
+    $EDITOR = 'notepad++'
+} else {
+    # Fallback to another editor or install notepad++
+    Write-Host "Notepad++ not found. Falling back to 'notepad'."
+    $EDITOR = 'notepad'
+}
+Set-Alias -Name notepad++ -Value $EDITOR
 
+function Edit-Profile {
+    notepad++ $PROFILE.CurrentUserAllHosts
+}
+
+function ep {
+    notepad++ $PROFILE
+}
+
+# Reset cursor style to underscore after exiting `nvim`
+$Host.UI.RawUI.CursorType = 'Underscore'
 
 ## Final Line to set prompt
 oh-my-posh init pwsh --config https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/kali.omp.json | Invoke-Expression
