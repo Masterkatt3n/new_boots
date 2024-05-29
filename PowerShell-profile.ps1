@@ -143,21 +143,19 @@ function Test-CommandExists {
 }
 
 # Editor Configuration
-$EDITOR = if (Test-CommandExists vscodium) { 'vscodium' }
+$EDITOR = if (Test-CommandExists notepad++) { 'notepad++' }
 elseif (Test-CommandExists pvim) { 'pvim' }
 elseif (Test-CommandExists vim) { 'vim' }
 elseif (Test-CommandExists vi) { 'vi' }
-elseif (Test-CommandExists vscodi) { 'vscodi' }
+elseif (Test-CommandExists vscodium) { 'vscodium' }
 elseif (Test-CommandExists nvim) { 'nvim' }
-elseif (Test-CommandExists notepad++) { 'notepad++' }
 elseif (Test-CommandExists sublime_text) { 'sublime_text' }
 else { 'notepad' }
 
-(Test-CommandExists vscodium) { 'vscodium' }
-
-#$env:EDITOR = "C:\Program Files\Notepad++\notepad++.exe"
-$env:PATH += ";C:\Users\steADM\AppData\Local\Programs\VSCodium"
-$env:EDITOR = "C:\Users\steADM\AppData\Local\Programs\VSCodium\vscodium.exe"
+$env:EDITOR = "C:\Program Files\Notepad++\notepad++.exe"
+$env:PATH += ";C:\Program Files\Notepad++\notepad++.exe"
+#$env:EDITOR = "C:\Users\steADM\AppData\Local\Programs\VSCodium\vscodium.exe"
+#$env:PATH += ";C:\Users\steADM\AppData\Local\Programs\VSCodium"
 
 Set-Alias -Name ff -Value Find-File
 
@@ -457,7 +455,7 @@ if (Test-CommandExists 'vscodium') {
 Set-Alias -Name vscode -Value $EDITOR
 
 function Edit-Profile {
-    vscode $PROFILE.CurrentUserAllHosts
+    vscodium $PROFILE.CurrentUserAllHosts
 }
 
 function ep {
