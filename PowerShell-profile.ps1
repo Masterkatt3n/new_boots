@@ -46,7 +46,7 @@ function sha1 { Get-FileHash -Algorithm SHA1 $args }
 function sha256 { Get-FileHash -Algorithm SHA256 $args }
 
 # Quick shortcut to start notepad
-function n { notepad $args }
+#function n { notepad $args }
 
 # Drive shortcuts
 function HKLM: { Set-Location HKLM: }
