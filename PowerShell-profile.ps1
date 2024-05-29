@@ -445,8 +445,8 @@ if (Test-Path($ChocolateyProfile)) {
     Import-Module "$ChocolateyProfile"
 }
 # Ensure `editor` is installed and accessible
-if (Test-CommandExists 'vscodium') {
-    $EDITOR = 'vscodium'
+if (Test-CommandExists 'vscode') {
+    $EDITOR = 'vscode'
 } else {
     # Fallback to another editor or install notepad++
     Write-Host "$EDITOR not found. Falling back to 'notepad'."
@@ -455,14 +455,14 @@ if (Test-CommandExists 'vscodium') {
 Set-Alias -Name vscode -Value $EDITOR
 
 function Edit-Profile {
-    vscodium $PROFILE.CurrentUserAllHosts
+    vscode $PROFILE.CurrentUserAllHosts
 }
 
 function ep {
     notepad++ $PROFILE
 }
 
-## Final Line to set prompt
+## Final Line to set prompt #
 oh-my-posh init pwsh --config https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/kali.omp.json | Invoke-Expression
 if (Get-Command zoxide -ErrorAction SilentlyContinue) {
     Invoke-Expression (& { (zoxide init powershell | Out-String) })
