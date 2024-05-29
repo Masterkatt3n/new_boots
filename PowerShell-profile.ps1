@@ -24,19 +24,19 @@ function Update-Profile {
     }
 
     try {
-        $url = "https://raw.githubusercontent.com/Masterkatt3n/new_boots/main/PowerShell-profile.ps1"
-        $oldhash = Get-FileHash $PROFILE
-        Invoke-RestMethod $url -OutFile "$env:temp/Microsoft.PowerShell_profile.ps1"
+       $url = "https://raw.githubusercontent.com/Masterkatt3n/new_boots/main/PowerShell-profile.ps1"
+       $oldhash = Get-FileHash $PROFILE
+      Invoke-RestMethod $url -OutFile "$env:temp/Microsoft.PowerShell_profile.ps1"
         $newhash = Get-FileHash "$env:temp/Microsoft.PowerShell_profile.ps1"
         if ($newhash.Hash -ne $oldhash.Hash) {
             Copy-Item -Path "$env:temp/Microsoft.PowerShell_profile.ps1" -Destination $PROFILE -Force
             Write-Host "Profile has been updated. Please restart your shell to reflect changes" -ForegroundColor Magenta
-        }
+       }
     } catch {
         Write-Error "Unable to check for `$profile updates"
     } finally {
         Remove-Item "$env:temp/Microsoft.PowerShell_profile.ps1" -ErrorAction SilentlyContinue
-    }
+   }
 }
 Update-Profile
 
@@ -151,6 +151,10 @@ elseif (Test-CommandExists vscodium) { 'vscodium' }
 elseif (Test-CommandExists nvim) { 'nvim' }
 elseif (Test-CommandExists sublime_text) { 'sublime_text' }
 else { 'notepad' }
+
+#$env:EDITOR = "C:\Program Files\Notepad++\notepad++.exe"
+$env:PATH += ";C:\Users\steADM\AppData\Local\Programs\VSCodium"
+$env:EDITOR = "C:\Users\steADM\AppData\Local\Programs\VSCodium\vscodium.exe"
 
 Set-Alias -Name ff -Value Find-File
 
@@ -439,22 +443,22 @@ $ChocolateyProfile = "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
 if (Test-Path($ChocolateyProfile)) {
     Import-Module "$ChocolateyProfile"
 }
-# Ensure `notepad++` is installed and accessible
+# Ensure `editor` is installed and accessible
 if (Test-CommandExists 'vscodium') {
     $EDITOR = 'vscodium'
 } else {
     # Fallback to another editor or install notepad++
-    Write-Host "vscodium not found. Falling back to 'notepad'."
-    $EDITOR = 'vscodium'
+    Write-Host "notepad++ not found. Falling back to 'notepad'."
+    $EDITOR = 'notepad'
 }
-Set-Alias -Name vscodium -Value $EDITOR
+Set-Alias -Name vscode -Value $EDITOR
 
 function Edit-Profile {
-    vscodium $PROFILE.CurrentUserAllHosts
+    vscode $PROFILE.CurrentUserAllHosts
 }
 
 function ep {
-    vscodium $PROFILE
+    notepad++ $PROFILE
 }
 
 ## Final Line to set prompt
