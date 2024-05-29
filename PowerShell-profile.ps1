@@ -143,7 +143,7 @@ function Test-CommandExists {
 }
 
 # Editor Configuration
-$EDITOR = if (Test-CommandExists)  vscodium { 'vscodium' }
+$EDITOR = if (Test-CommandExists vscodium) { 'vscodium' }
 elseif (Test-CommandExists pvim) { 'pvim' }
 elseif (Test-CommandExists vim) { 'vim' }
 elseif (Test-CommandExists vi) { 'vi' }
