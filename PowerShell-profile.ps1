@@ -94,9 +94,9 @@ function admin {
 
     if ($args.Count -gt 0) {   
         $argList = "& '$args'"
-        Start-Process -FilePath "$psHome\pwsh.exe" -Verb runAs -ArgumentList $argList
+        Start-Process -FilePath "$PSHome\pwsh.exe" -Verb runAs -ArgumentList $argList
     } else {
-        Start-Process -FilePath 'pwsh' -Verb runAs -ArgumentList $argList
+        Start-Process -FilePath 'pwsh.exe' -Verb runAs -ArgumentList $argList
     }
 }
 function Update-PowerShell {
@@ -448,7 +448,7 @@ if (Test-CommandExists 'vscodium') {
     $EDITOR = 'vscodium'
 } else {
     # Fallback to another editor or install notepad++
-    Write-Host "notepad++ not found. Falling back to 'notepad'."
+    Write-Host "$EDITOR not found. Falling back to 'notepad'."
     $EDITOR = 'notepad'
 }
 Set-Alias -Name vscode -Value $EDITOR
