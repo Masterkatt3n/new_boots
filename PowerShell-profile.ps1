@@ -143,7 +143,7 @@ function Test-CommandExists {
 }
 
 # Editor Configuration
-$EDITOR = if (Test-CommandExists  vscodium { 'vscodium' }
+$EDITOR = if (Test-CommandExists)  vscodium { 'vscodium' }
 elseif (Test-CommandExists pvim) { 'pvim' }
 elseif (Test-CommandExists vim) { 'vim' }
 elseif (Test-CommandExists vi) { 'vi' }
@@ -153,7 +153,7 @@ elseif (Test-CommandExists notepad++) { 'notepad++' }
 elseif (Test-CommandExists sublime_text) { 'sublime_text' }
 else { 'notepad' }
 
-(Test-CommandExists notepad++) { 'notepad++' }
+(Test-CommandExists vscodium) { 'vscodium' }
 
 #$env:EDITOR = "C:\Program Files\Notepad++\notepad++.exe"
 $env:PATH += ";C:\Users\steADM\AppData\Local\Programs\VSCodium"
