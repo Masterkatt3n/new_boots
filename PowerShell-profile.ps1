@@ -253,6 +253,7 @@ function Edit-Profile {
 
 # Create alias for editing profile
 Set-Alias -Name ep -Value Edit-Profile
+Set-Alias -Name gpro -Value gps
 
 function ix ($file) {
     curl.exe -F "f:1=@$file" ix.io
