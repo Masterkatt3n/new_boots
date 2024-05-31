@@ -28,8 +28,7 @@ function Update-Profile {
         $oldhash = Get-FileHash $PROFILE
         Invoke-RestMethod $url -OutFile "$env:temp/Microsoft.PowerShell_profile.ps1"
         $newhash = Get-FileHash "$env:temp/Microsoft.PowerShell_profile.ps1"
-        if ($newhash.Hash -ne $oldhash.Hash)
-        {
+        if ($newhash.Hash -ne $oldhash.Hash) {
             Copy-Item -Path "$env:temp/Microsoft.PowerShell_profile.ps1" -Destination $PROFILE -Force
             Write-Host "Profile has been updated. Please restart your shell to reflect changes" -ForegroundColor Magenta
         }
@@ -213,32 +212,48 @@ function Find-File($name) {
 function unzip {
     param (
         [string]$source,
-        [string]$destination = $PWD
+        [string]$destination
     )
+    $shell = New-Object -ComObject shell.application
+    $zip = $shell.NameSpace($source)
+    $destinationFolder = $shell.NameSpace($destination)
 
-    Write-Output "Extracting $source to $destination"
-
-    # Check if the source file exists
-    $fullPath = Join-Path $PWD $source
-    if (-not (Test-Path $fullPath -PathType Leaf)) {
-        Write-Host "Source file not found: $fullPath" -ForegroundColor Red
+    if ($zip -eq $null) {
+        Write-Host "Invalid zip file path: $source"
+        return
+    }
+    if ($destinationFolder -eq $null) {
+        Write-Host "Invalid destination folder path: $destination"
         return
     }
 
-    # Check if the destination folder exists, create it if not
-    if (-not (Test-Path $destination -PathType Container)) {
-        New-Item -ItemType Directory -Force -Path $destination | Out-Null
+    $destinationFolder.CopyHere($zip.Items(), 16)
+    Write-Host "Unzipping complete."
+}
+
+# Function to open profile in Notepad++
+function Edit-Profile {
+    param(
+        [string]$profilePath = $PROFILE
+    )
+
+    # If $profilePath is not defined or empty, use $PROFILE as the default
+    if ([string]::IsNullOrEmpty($profilePath)) {
+        $profilePath = $PROFILE
     }
 
-    # Unzip the contents
-    try {
-        Compress-Archive -Path $fullPath -DestinationPath $destination -Force -ErrorAction Stop
-        Write-Output "Extraction successful"
-    }
-    catch {
-        Write-Host "Extraction failed: $_" -ForegroundColor Red
+    # Check if Notepad++ is installed and open the profile with it
+    if (Test-CommandExists notepad++) {
+        notepad++ $profilePath
+    } else {
+        Write-Host "Notepad++ is not installed. Opening profile with default editor."
+        notepad $profilePath
     }
 }
+
+# Create alias for editing profile
+Set-Alias -Name ep -Value Edit-Profile
+
 function ix ($file) {
     curl.exe -F "f:1=@$file" ix.io
 }
@@ -305,17 +320,6 @@ if (Test-CommandExists 'notepad++') {
     $EDITOR = 'notepad'
 }
 
-Set-Alias -Name vscode -Value $EDITOR
-Set-Alias -Name ep -Value $EDITOR
-
-# Editing Profile Shortcuts
-function Edit-Profile {
-    & "$env:EDITOR" $PROFILE
-}
-function ep {
-    & "$env:EDITOR" $PROFILE
-}
-
 function touch($file) {
     "" | Out-File $file -Encoding ASCII
 }
@@ -358,96 +362,6 @@ function wul {
     Get-WULastResults
 }
 
-# Game
-function Get-ItemProbabilities {
-    param (
-        [double]$drawRate5Star = 0.05,
-        [int]$numberOf5StarItems = 8,
-        [int]$orbsPerPull = 15
-    )
-
-    # Calculate probability of getting a 5-star item
-    function Calculate5StarProbability {
-        param (
-            [double]$drawRate,
-            [int]$numberOfItems
-        )
-
-        $probability = $drawRate / $numberOfItems
-        return $probability
-    }
-
-    $probability5Star = Calculate5StarProbability $drawRate5Star $numberOf5StarItems
-
-    # Simulate attempts to get a 5-star item
-    $cumulativeCost = 0
-    $attempts = 0
-
-    while ($true) {
-        $attempts++
-        $cumulativeCost += $orbsPerPull
-
-        # Generate a random number with more precision
-        $randomNumber = (Get-Random -Minimum 0 -Maximum 100) / 100
-
-        if ($randomNumber -le $probability5Star) {
-            # Successfully obtained a 5-star item
-            Write-Host "Successfully obtained a 5-star item in $attempts attempts."
-            Write-Host "Cumulative cost to get a 5-star item: $cumulativeCost orbs"
-            break
-        }
-    }
-}
-function Get-Specific5StarItem {
-    param (
-        [double]$drawRate5Star = 0.05,
-        [double]$drawRateSpecific5Star = 0.01, # Adjust this to the specific item's draw rate
-        [int]$numberOf5StarItems = 8,
-        [int]$numberOfSpecific5StarItems = 1, # Number of specific 5-star items
-        [int]$orbsPerPull = 15
-    )
-
-    # Calculate probabilities of getting a 5-star item and the specific 5-star item
-    function Calculate5StarProbabilities {
-        param (
-            [double]$drawRate,
-            [double]$drawRateSpecific,
-            [int]$numberOfItems,
-            [int]$numberOfSpecificItems
-        )
-
-        $probability5Star = $drawRate / $numberOfItems
-        $probabilitySpecific5Star = $drawRateSpecific * $probability5Star * $numberOfSpecificItems
-        return $probability5Star, $probabilitySpecific5Star
-    }
-
-    $probability5Star, $probabilitySpecific5Star = Calculate5StarProbabilities $drawRate5Star $drawRateSpecific5Star $numberOf5StarItems $numberOfSpecific5StarItems
-
-    # Simulate attempts to get a 5-star item and the specific 5-star item
-    $cumulativeCost = 0
-    $attempts = 0
-
-    while ($true) {
-        $attempts++
-        $cumulativeCost += $orbsPerPull
-
-        $randomNumber = (Get-Random -Minimum 0 -Maximum 100) / 100
-
-        if ($randomNumber -le $probabilitySpecific5Star) {
-            # Successfully obtained the specific 5-star item
-            Write-Host "Successfully obtained the specific 5-star item in $attempts attempts."
-            Write-Host "Cumulative cost to get the specific 5-star item: $cumulativeCost orbs"
-            break
-        }
-
-        if ($randomNumber -le $probability5Star) {
-            # Successfully obtained a generic 5-star item
-            Write-Host "Successfully obtained a 5-star item (not the specific one) in $attempts attempts."
-            Write-Host "Cumulative cost to get a 5-star item: $cumulativeCost orbs"
-            break
-        }
-    }
-}
 # Quick Access to System Information
 function sysinfo { Get-ComputerInfo }
 
