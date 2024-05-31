@@ -465,13 +465,13 @@ if (Test-CommandExists 'notepad++') {
 }
 
 Set-Alias -Name vscode -Value $EDITOR
+Set-Alias -Name ep -Value $EDITOR
 
 function Edit-Profile {
-    vscode $PROFILE.CurrentUserAllHosts
+    & $EDITOR $PROFILE.CurrentUserAllHosts
 }
-
 function ep {
-    notepad++ $PROFILE
+    & $EDITOR $PROFILE
 }
 
 ## Final Line to set prompt #
