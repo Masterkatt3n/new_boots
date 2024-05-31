@@ -395,6 +395,10 @@ Write-Host "EDITOR is set to: $env:EDITOR"
 ## Final Line to set prompt #
 oh-my-posh init pwsh --config https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/kali.omp.json | Invoke-Expression
 if (Get-Command zoxide -ErrorAction SilentlyContinue) {
+    # Ensure the variable is defined before accessing it
+    if (-not (Get-Variable -Name __zoxide_hooked -ErrorAction SilentlyContinue)) {
+        $global:__zoxide_hooked = $false
+    }
     Invoke-Expression (& { (zoxide init powershell | Out-String) })
 }
 else {
@@ -402,6 +406,10 @@ else {
     try {
         winget install -e --id ajeetdsouza.zoxide
         Write-Host "zoxide installed successfully. Initializing..."
+        # Ensure the variable is defined before accessing it
+        if (-not (Get-Variable -Name __zoxide_hooked -ErrorAction SilentlyContinue)) {
+            $global:__zoxide_hooked = $false
+        }
         Invoke-Expression (& { (zoxide init powershell | Out-String) })
     }
     catch {
