@@ -24,19 +24,20 @@ function Update-Profile {
     }
 
     try {
-       $url = "https://raw.githubusercontent.com/Masterkatt3n/new_boots/main/PowerShell-profile.ps1"
-       $oldhash = Get-FileHash $PROFILE
-      Invoke-RestMethod $url -OutFile "$env:temp/Microsoft.PowerShell_profile.ps1"
+        $url = "https://raw.githubusercontent.com/Masterkatt3n/new_boots/main/PowerShell-profile.ps1"
+        $oldhash = Get-FileHash $PROFILE
+        Invoke-RestMethod $url -OutFile "$env:temp/Microsoft.PowerShell_profile.ps1"
         $newhash = Get-FileHash "$env:temp/Microsoft.PowerShell_profile.ps1"
-        if ($newhash.Hash -ne $oldhash.Hash) {
+        if ($newhash.Hash -ne $oldhash.Hash)
+        {
             Copy-Item -Path "$env:temp/Microsoft.PowerShell_profile.ps1" -Destination $PROFILE -Force
             Write-Host "Profile has been updated. Please restart your shell to reflect changes" -ForegroundColor Magenta
-       }
+        }
     } catch {
         Write-Error "Unable to check for `$profile updates"
     } finally {
         Remove-Item "$env:temp/Microsoft.PowerShell_profile.ps1" -ErrorAction SilentlyContinue
-   }
+    }
 }
 Update-Profile
 
@@ -46,7 +47,7 @@ function sha1 { Get-FileHash -Algorithm SHA1 $args }
 function sha256 { Get-FileHash -Algorithm SHA256 $args }
 
 # Quick shortcut to start notepad
-function n { notepad $args }
+#function n { notepad $args }
 
 # Drive shortcuts
 #function HKLM: { Set-Location HKLM: }
@@ -151,6 +152,8 @@ elseif (Test-CommandExists nvim) { 'nvim' }
 elseif (Test-CommandExists sublime_text) { 'sublime_text' }
 else { 'notepad' }
 
+$env:EDITOR = "C:\Program Files\Notepad++\notepad++.exe"
+
 Set-Alias -Name ff -Value Find-File
 
 function pgrep($name) {
@@ -195,8 +198,8 @@ function reload-profile {
     Write-Host "Current profile location: $PROFILE"
     
     try {
-         . $PROFILE
-       Write-Host "Profile reloaded successfully."
+        . $PROFILE
+        Write-Host "Profile reloaded successfully."
     }
     catch {
         Write-Host "Error reloading profile: $_"
@@ -276,9 +279,43 @@ function grep {
         }
     }
     catch {
-        Write-Host "Error: $_"
+        Write-Host "Error processing directory: $_"
     }
+}# Create new/empty profile file if not exists
+if (!(Test-Path -Path $PROFILE)) {
+    New-Item -ItemType File -Path $PROFILE -Force
 }
+
+# Check if Notepad++ is installed
+$notepadPlusPlusPath = "C:\Program Files\Notepad++\notepad++.exe"
+if (Test-Path $notepadPlusPlusPath) {
+    $EDITOR = $notepadPlusPlusPath
+} else {
+    $EDITOR = "notepad"
+}
+
+$env:EDITOR = $EDITOR
+
+# Ensure `editor` is installed and accessible
+if (Test-CommandExists 'notepad++') {
+    $EDITOR = 'notepad++'
+} else {
+    # Fallback to another editor or install notepad++
+    Write-Host "$EDITOR not found. Falling back to 'notepad'."
+    $EDITOR = 'notepad'
+}
+
+Set-Alias -Name vscode -Value $EDITOR
+Set-Alias -Name ep -Value $EDITOR
+
+# Editing Profile Shortcuts
+function Edit-Profile {
+    & "$env:EDITOR" $PROFILE
+}
+function ep {
+    & "$env:EDITOR" $PROFILE
+}
+
 function touch($file) {
     "" | Out-File $file -Encoding ASCII
 }
@@ -437,35 +474,6 @@ Set-PSReadLineOption -Colors @{
 $ChocolateyProfile = "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
 if (Test-Path($ChocolateyProfile)) {
     Import-Module "$ChocolateyProfile"
-}
-
-# Check if Notepad++ is installed
-$notepadPlusPlusPath = "C:\Program Files\Notepad++\notepad++.exe"
-if (Test-Path $notepadPlusPlusPath) {
-    $EDITOR = $notepadPlusPlusPath
-} else {
-    $EDITOR = "notepad"
-}
-
-$env:EDITOR = $EDITOR
-
-# Ensure `editor` is installed and accessible
-if (Test-CommandExists 'notepad++') {
-    $EDITOR = 'notepad++'
-} else {
-    # Fallback to another editor or install notepad++
-    Write-Host "$EDITOR not found. Falling back to 'notepad'."
-    $EDITOR = 'notepad'
-}
-
-Set-Alias -Name vscode -Value $EDITOR
-Set-Alias -Name ep -Value $EDITOR
-
-function Edit-Profile {
-    & "$env:EDITOR" $PROFILE.CurrentUserAllHosts
-}
-function ep {
-    & "$env:EDITOR" $PROFILE
 }
 
 Write-Host "EDITOR is set to: $env:EDITOR"
