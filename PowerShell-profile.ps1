@@ -68,6 +68,10 @@ $Host.UI.RawUI.WindowTitle = "PowerShell {0}" -f $PSVersionTable.PSVersion.ToStr
 if ($isAdmin) {
     $Host.UI.RawUI.WindowTitle += " [ADMIN]"
 }
+# We don't need these anymore; they were just temporary variables to get to $isAdmin. 
+# Delete them to prevent cluttering up the user profile. 
+Remove-Variable identity
+Remove-Variable principal
 
 # The rough equivalent of dir /s /b. For example, dirs *.png is dir /s /b *.png
 function dirs {
@@ -130,11 +134,6 @@ function Update-PowerShell {
     }
 }
 Update-PowerShell
-
-# We don't need these anymore; they were just temporary variables to get to $isAdmin. 
-# Delete them to prevent cluttering up the user profile. 
-Remove-Variable identity
-Remove-Variable principal
 
 function Test-CommandExists {
     param($command)
