@@ -41,9 +41,9 @@ function Update-Profile {
 Update-Profile
 
 # Compute file hashes - useful for checking successful downloads 
-function md5 { Get-FileHash -Algorithm MD5 $args }
-function sha1 { Get-FileHash -Algorithm SHA1 $args }
-function sha256 { Get-FileHash -Algorithm SHA256 $args }
+#function md5 { Get-FileHash -Algorithm MD5 $args }
+#function sha1 { Get-FileHash -Algorithm SHA1 $args }
+#function sha256 { Get-FileHash -Algorithm SHA256 $args }
 
 # Quick shortcut to start notepad
 #function n { notepad $args }
