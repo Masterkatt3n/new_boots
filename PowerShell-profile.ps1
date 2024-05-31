@@ -41,12 +41,12 @@ function Update-Profile {
 Update-Profile
 
 # Compute file hashes - useful for checking successful downloads 
-#function md5 { Get-FileHash -Algorithm MD5 $args }
-#function sha1 { Get-FileHash -Algorithm SHA1 $args }
-#function sha256 { Get-FileHash -Algorithm SHA256 $args }
+function md5 { Get-FileHash -Algorithm MD5 $args }
+function sha1 { Get-FileHash -Algorithm SHA1 $args }
+function sha256 { Get-FileHash -Algorithm SHA256 $args }
 
 # Quick shortcut to start notepad
-#function n { notepad $args }
+function n { notepad $args }
 
 # Drive shortcuts
 #function HKLM: { Set-Location HKLM: }
@@ -150,11 +150,6 @@ elseif (Test-CommandExists vscodium) { 'vscodium' }
 elseif (Test-CommandExists nvim) { 'nvim' }
 elseif (Test-CommandExists sublime_text) { 'sublime_text' }
 else { 'notepad' }
-
-$env:EDITOR = "C:\Program Files\Notepad++\notepad++.exe"
-$env:PATH += ";C:\Program Files\Notepad++\notepad++.exe"
-#$env:EDITOR = "C:\Users\steADM\AppData\Local\Programs\VSCodium\vscodium.exe"
-#$env:PATH += ";C:\Users\steADM\AppData\Local\Programs\VSCodium"
 
 Set-Alias -Name ff -Value Find-File
 
@@ -453,7 +448,6 @@ if (Test-Path $notepadPlusPlusPath) {
 }
 
 $env:EDITOR = $EDITOR
-$env:PATH += ";$EDITOR"
 
 # Ensure `editor` is installed and accessible
 if (Test-CommandExists 'notepad++') {
@@ -468,11 +462,13 @@ Set-Alias -Name vscode -Value $EDITOR
 Set-Alias -Name ep -Value $EDITOR
 
 function Edit-Profile {
-    & $EDITOR $PROFILE.CurrentUserAllHosts
+    & "$env:EDITOR" $PROFILE.CurrentUserAllHosts
 }
 function ep {
-    & $EDITOR $PROFILE
+    & "$env:EDITOR" $PROFILE
 }
+
+Write-Host "EDITOR is set to: $env:EDITOR"
 
 ## Final Line to set prompt #
 oh-my-posh init pwsh --config https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/kali.omp.json | Invoke-Expression
