@@ -390,7 +390,7 @@ if (Test-Path($ChocolateyProfile)) {
     Import-Module "$ChocolateyProfile"
 }
 
-Write-Host "EDITOR is set to: $env:EDITOR"
+#Write-Host "EDITOR is set to: $env:EDITOR"
 
 ## Final Line to set prompt #
 oh-my-posh init pwsh --config https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/kali.omp.json | Invoke-Expression
