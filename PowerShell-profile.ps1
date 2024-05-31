@@ -443,14 +443,27 @@ $ChocolateyProfile = "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
 if (Test-Path($ChocolateyProfile)) {
     Import-Module "$ChocolateyProfile"
 }
+
+# Check if Notepad++ is installed
+$notepadPlusPlusPath = "C:\Program Files\Notepad++\notepad++.exe"
+if (Test-Path $notepadPlusPlusPath) {
+    $EDITOR = $notepadPlusPlusPath
+} else {
+    $EDITOR = "notepad"
+}
+
+$env:EDITOR = $EDITOR
+$env:PATH += ";$EDITOR"
+
 # Ensure `editor` is installed and accessible
-if (Test-CommandExists 'vscode') {
-    $EDITOR = 'vscode'
+if (Test-CommandExists 'notepad++') {
+    $EDITOR = 'notepad++'
 } else {
     # Fallback to another editor or install notepad++
     Write-Host "$EDITOR not found. Falling back to 'notepad'."
     $EDITOR = 'notepad'
 }
+
 Set-Alias -Name vscode -Value $EDITOR
 
 function Edit-Profile {
