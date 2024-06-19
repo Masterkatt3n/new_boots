@@ -395,25 +395,35 @@ if (Test-Path($ChocolateyProfile)) {
 
 ## Final Line to set prompt #
 oh-my-posh init pwsh --config https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/kali.omp.json | Invoke-Expression
+# Ensure Zoxide is initialized if available, or install it if not
 if (Get-Command zoxide -ErrorAction SilentlyContinue) {
     # Ensure the variable is defined before accessing it
     if (-not (Get-Variable -Name __zoxide_hooked -ErrorAction SilentlyContinue)) {
         $global:__zoxide_hooked = $false
     }
-    Invoke-Expression (& { (zoxide init powershell | Out-String) })
+    # Initialize Zoxide
+    if (-not $global:__zoxide_hooked) {
+        Invoke-Expression (& { (zoxide init powershell | Out-String) })
+        $global:__zoxide_hooked = $true
+    }
 }
 else {
     Write-Host "zoxide command not found. Attempting to install via winget..."
     try {
-        winget install -e --id ajeetdsouza.zoxide
+        winget install -e --id ajeetdsouza.zoxide -h
         Write-Host "zoxide installed successfully. Initializing..."
         # Ensure the variable is defined before accessing it
         if (-not (Get-Variable -Name __zoxide_hooked -ErrorAction SilentlyContinue)) {
             $global:__zoxide_hooked = $false
         }
-        Invoke-Expression (& { (zoxide init powershell | Out-String) })
+        # Initialize Zoxide
+        if (-not $global:__zoxide_hooked) {
+            Invoke-Expression (& { (zoxide init powershell | Out-String) })
+            $global:__zoxide_hooked = $true
+        }
     }
     catch {
         Write-Error "Failed to install zoxide. Error: $_"
     }
 }
+
