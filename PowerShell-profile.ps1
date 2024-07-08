@@ -348,16 +348,13 @@ function reboot {
 
 # PSWindowsUpdate aliases
 function gwu {
-    get-windowsupdate -verbose
+    Get-WindowsUpdate -verbose
 }
 function iwu {
-    install-windowsupdate -AcceptAll -Autoreboot -verbose
-}
-function dwu {
-    download-windowsupdate -AcceptAll -Verbose
+    Install-WindowsUpdate -AcceptAll -verbose
 }
 function wuh {
-    get-WUHistory -last 25 
+    Get-WUHistory -last 25 
 }
 function wul {
     Get-WULastResults
