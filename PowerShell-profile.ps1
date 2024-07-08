@@ -351,7 +351,7 @@ function gwu {
     Get-WindowsUpdate -verbose
 }
 function iwu {
-    Install-WindowsUpdate -AcceptAll -verbose
+    Get-WindowsUpdate -Install -AcceptAll -Verbose
 }
 function wuh {
     Get-WUHistory -last 25 
