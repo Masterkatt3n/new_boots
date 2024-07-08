@@ -363,7 +363,7 @@ function wul {
     Get-WULastResults
 }
 function wingetupdate {
-    WinGet List --Upgrade-Available
+    WinGet List --Update-Available
 }
 
 # Quick Access to System Information
