@@ -362,7 +362,7 @@ function wuh {
 function wul {
     Get-WULastResults
 }
-function winget update list {
+function wingetupdate {
     WinGet Update List --Available
 }
 
