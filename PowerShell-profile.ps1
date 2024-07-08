@@ -362,6 +362,9 @@ function wuh {
 function wul {
     Get-WULastResults
 }
+function winget update list {
+    WinGet Update List --Available
+}
 
 # Quick Access to System Information
 function sysinfo { Get-ComputerInfo }
