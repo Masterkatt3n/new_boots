@@ -155,6 +155,10 @@ $env:EDITOR = "C:\Program Files\Notepad++\notepad++.exe"
 
 Set-Alias -Name ff -Value Find-File
 
+function .. {
+    Set-Location ..
+}
+
 function pgrep($name) {
     Get-Process $name
 }
