@@ -347,7 +347,8 @@ function pgrep($name) {
     Get-Process $name
 }
 function reboot {
-    Restart-Computer -Force
+    # Initiate a graceful restart with a timeout of 10 seconds
+    & shutdown.exe /r /t 10 /f /c "Restarting computer gracefully. Save your work."
 }
 
 # PSWindowsUpdate aliases
@@ -384,6 +385,42 @@ Set-PSReadLineOption -Colors @{
     Parameter = 'Green'
     String    = 'DarkCyan'
 }
+# Function to alias "home" to "z ~" or "cd ~"
+function home {
+    if (Get-Command zoxide -ErrorAction SilentlyContinue) {
+        z ~
+    } else {
+        cd ~
+    }
+}
+# Progress Bar Custom Colors
+
+# Define a function to get the ANSI escape code for a given 256 color code
+function Get-256ColorCode {
+    param (
+        [int]$colorCode
+    )
+    return "`e[38;5;${colorCode}m"
+}
+
+# Define the color transition sequence (e.g., blue to red to white)
+$colors = @(27, 33, 39, 45, 51, 87, 123, 159, 195, 187, 186, 185, 184, 228, 227, 226, 221, 220, 179, 178, 136, 137, 173, 172, 215, 214, 209, 167, 208, 166, 202,203, 204, 162, 161, 125, 197, 160, 124, 196) # Adjust as necessary for a smooth transition
+
+# Clear the console
+#Clear-Host
+
+for ($i = 0; $i -le 100; $i++) {
+    $colorIndex = [math]::Round(($i / 100) * ($colors.Count - 1))
+    $colorCode = $colors[$colorIndex]
+    $color = Get-256ColorCode $colorCode
+    $activity = "${color}HotStuff${colorReset}"
+    $status = "${color}$i%Burnin'${colorReset}"
+    Write-Progress -Activity $activity -Status $status -PercentComplete $i
+    Start-Sleep -Milliseconds 100
+}
+
+# Clear the progress bar
+Write-Progress -Activity "Complete" -Status "One Burn Down" -Completed
 
 # Import the ChocolateyProfile that contains the necessary code to eable
 # tab-completions to function for `choco`.
@@ -397,15 +434,17 @@ if (Test-Path($ChocolateyProfile)) {
 
 #Write-Host "EDITOR is set to: $env:EDITOR"
 
+# Initialize Oh My Posh with the kali theme
+#oh-my-posh init pwsh --config 'C:\Users\steADM\AppData\Local\Programs\oh-my-posh\themes\kali.omp.json' | Invoke-Expression
+
 ## Final Line to set prompt #
 oh-my-posh init pwsh --config https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/kali.omp.json | Invoke-Expression
+
 # Ensure Zoxide is initialized if available, or install it if not
 if (Get-Command zoxide -ErrorAction SilentlyContinue) {
-    # Ensure the variable is defined before accessing it
     if (-not (Get-Variable -Name __zoxide_hooked -ErrorAction SilentlyContinue)) {
         $global:__zoxide_hooked = $false
     }
-    # Initialize Zoxide
     if (-not $global:__zoxide_hooked) {
         Invoke-Expression (& { (zoxide init powershell | Out-String) })
         $global:__zoxide_hooked = $true
@@ -416,11 +455,9 @@ else {
     try {
         winget install -e --id ajeetdsouza.zoxide -h
         Write-Host "zoxide installed successfully. Initializing..."
-        # Ensure the variable is defined before accessing it
         if (-not (Get-Variable -Name __zoxide_hooked -ErrorAction SilentlyContinue)) {
             $global:__zoxide_hooked = $false
         }
-        # Initialize Zoxide
         if (-not $global:__zoxide_hooked) {
             Invoke-Expression (& { (zoxide init powershell | Out-String) })
             $global:__zoxide_hooked = $true
