@@ -5,6 +5,14 @@
 # Initial GitHub.com connectivity check with 1 second timeout
 $canConnectToGitHub = Test-Connection github.com -Count 1 -Quiet -TimeoutSeconds 1
 
+# Drive shortcuts
+function HKLM: { Set-Location HKLM: }
+function HKCU: { Set-Location HKCU: }
+function Env: { Set-Location Env: }
+
+# Create new/empty profile file if not exists
+if (!(Test-Path -Path $PROFILE)) { New-Item -ItemType File -Path $PROFILE -Force }
+
 # Import Modules and External Profiles
 # Ensure Terminal-Icons module is installed before importing
 if (-not (Get-Module -ListAvailable -Name Terminal-Icons)) {
@@ -16,79 +24,22 @@ if (Test-Path($ChocolateyProfile)) {
     Import-Module "$ChocolateyProfile"
 }
 
-# Check for Profile Updates
-function Update-Profile {
-    if (-not $global:canConnectToGitHub) {
-        Write-Host "Skipping profile update check due to GitHub.com not responding within 1 second." -ForegroundColor Yellow
-        return
-    }
-
-    try {
-        $url = "https://raw.githubusercontent.com/Masterkatt3n/new_boots/main/PowerShell-profile.ps1"
-        $oldhash = Get-FileHash $PROFILE
-        Invoke-RestMethod $url -OutFile "$env:temp/Microsoft.PowerShell_profile.ps1"
-        $newhash = Get-FileHash "$env:temp/Microsoft.PowerShell_profile.ps1"
-        if ($newhash.Hash -ne $oldhash.Hash) {
-            Copy-Item -Path "$env:temp/Microsoft.PowerShell_profile.ps1" -Destination $PROFILE -Force
-            Write-Host "Profile has been updated. Please restart your shell to reflect changes" -ForegroundColor Magenta
-        }
-    } catch {
-        Write-Error "Unable to check for `$profile updates"
-    } finally {
-        Remove-Item "$env:temp/Microsoft.PowerShell_profile.ps1" -ErrorAction SilentlyContinue
-    }
-}
-Update-Profile
-
-# Compute file hashes - useful for checking successful downloads 
-function md5 { Get-FileHash -Algorithm MD5 $args }
-function sha1 { Get-FileHash -Algorithm SHA1 $args }
-function sha256 { Get-FileHash -Algorithm SHA256 $args }
-
-# Quick shortcut to start notepad
-#function n { notepad $args }
-
-# Drive shortcuts
-#function HKLM: { Set-Location HKLM: }
-#function HKCU: { Set-Location HKCU: }
-#function Env: { Set-Location Env: }
-
 # Find out if the current user identity is elevated (has admin rights)
 $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
 $principal = New-Object Security.Principal.WindowsPrincipal $identity
 $isAdmin = $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
-
 # and appends [ADMIN] if appropriate for easy taskbar identification
 function prompt { 
     $location = if ($isAdmin) { "[{0}] # " -f (Get-Location) } else { "[{0}] $ " -f (Get-Location) }
     Write-Output $location
 }
-
 $Host.UI.RawUI.WindowTitle = "PowerShell {0}" -f $PSVersionTable.PSVersion.ToString()
 if ($isAdmin) {
     $Host.UI.RawUI.WindowTitle += " [ADMIN]"
 }
 # We don't need these anymore; they were just temporary variables to get to $isAdmin. 
-# Delete them to prevent cluttering up the user profile. 
 Remove-Variable identity
 Remove-Variable principal
-
-# The rough equivalent of dir /s /b. For example, dirs *.png is dir /s /b *.png
-function dirs {
-    $results = @()
-
-    if ($args.Count -gt 0) {
-        $results = Get-ChildItem -Recurse -Include $args | ForEach-Object { $_.FullName }
-    } else {
-        $results = Get-ChildItem -Recurse | ForEach-Object { $_.FullName }
-    }
-
-    $results | ForEach-Object {
-        Write-Output $_
-    }
-
-    Write-Output "Counter: $($results.Count)"  # Output the amount of directories
-}
 
 # Simple function to start a new elevated process. If arguments are supplied, then 
 # a single command is started with admin rights; if not, then a new admin instance
@@ -103,6 +54,7 @@ function admin {
         Start-Process -FilePath 'pwsh.exe' -Verb runAs -ArgumentList $argList
     }
 }
+
 function Update-PowerShell {
     if (-not $global:canConnectToGitHub) {
         Write-Host "Skipping PowerShell update check due to GitHub.com not responding within 1 second." -ForegroundColor Yellow
@@ -135,28 +87,57 @@ function Update-PowerShell {
 }
 Update-PowerShell
 
+# Function to ensure Commands
 function Test-CommandExists {
     param($command)
-    $exists = $null -ne (Get-Command $command -ErrorAction SilentlyContinue)
-    return $exists
+    return $null -ne (Get-Command $command -ErrorAction SilentlyContinue)
 }
 
 # Editor Configuration
-$EDITOR = if (Test-CommandExists notepad++) { 'notepad++' }
-elseif (Test-CommandExists pvim) { 'pvim' }
-elseif (Test-CommandExists vim) { 'vim' }
-elseif (Test-CommandExists vi) { 'vi' }
-elseif (Test-CommandExists vscodium) { 'vscodium' }
-elseif (Test-CommandExists nvim) { 'nvim' }
-elseif (Test-CommandExists sublime_text) { 'sublime_text' }
-else { 'notepad' }
+if (Test-CommandExists 'notepad++') {
+    $env:EDITOR = 'notepad++'
+} elseif (Test-CommandExists 'vim') {
+    $env:EDITOR = 'vim'
+} elseif (Test-CommandExists 'vscodium') {
+    $env:EDITOR = 'vscodium'
+} else {
+    $env:EDITOR = 'notepad'
+}
 
-$env:EDITOR = "C:\Program Files\Notepad++\notepad++.exe"
+# Function to open profile in Notepad++
+function Edit-Profile {
+    param(
+        [string]$profilePath = $PROFILE
+    )
 
-Set-Alias -Name ff -Value Find-File
+    # If $profilePath is not defined or empty, use $PROFILE as the default
+    if ([string]::IsNullOrEmpty($profilePath)) {
+        $profilePath = $PROFILE
+    }
 
-function .. {
-    Set-Location ..
+    # Check if Notepad++ is installed and open the profile with it
+    if (Test-CommandExists 'notepad++') {
+        Start-Process "notepad++" $profilePath
+    } else {
+        Write-Host "Notepad++ is not installed. Opening profile with default editor."
+        notepad $profilePath
+    }
+}
+Set-Alias -Name ep -Value Edit-Profile # Create alias for editing profile
+
+# Refresh the shell without exiting
+function reload-profile {
+    Write-Host "Reloading profile..."
+    Write-Host "Current execution policy: $(Get-ExecutionPolicy)"
+    Write-Host "Current profile location: $PROFILE"
+    
+    try {
+        . $PROFILE
+        Write-Host "Profile reloaded successfully."
+    }
+    catch {
+        Write-Host "Error reloading profile: $_"
+    }
 }
 
 function pgrep($name) {
@@ -174,13 +155,17 @@ function tail {
 }
 # Navigation Shortcuts
 function docs { Set-Location -Path $HOME\Documents }
-
 function dtop { Set-Location -Path $HOME\Desktop }
-
-# Network
-function Get-PubIP {
-    (Invoke-WebRequest http://ifconfig.me/ip ).Content
+function .. { Set-Location .. }
+function home {
+    if (Get-Command zoxide -ErrorAction SilentlyContinue) {
+        z ~
+    } else {
+        cd ~
+    }
 }
+
+# System been online
 function uptime {
     # Windows PowerShell only
     if ($PSVersionTable.PSVersion.Major -eq 5) {
@@ -191,28 +176,32 @@ function uptime {
         New-TimeSpan (Get-uptime -Since) | Select-Object -Property Days, Hours, Minutes, Seconds
     }
 }
-# Enhanced Listing
-function la { Get-ChildItem -Path . -Force | Format-Table -AutoSize }
-function ll { Get-ChildItem -Path . -Force -Hidden | Format-Table -AutoSize } 
 
-function reload-profile {
-    Write-Host "Reloading profile..."
-    Write-Host "Current execution policy: $(Get-ExecutionPolicy)"
-    Write-Host "Current profile location: $PROFILE"
-    
-    try {
-        . $PROFILE
-        Write-Host "Profile reloaded successfully."
-    }
-    catch {
-        Write-Host "Error reloading profile: $_"
-    }
-}
+# Search for a specific file
 function Find-File($name) {
     Get-ChildItem -recurse -filter "*${name}*" -ErrorAction SilentlyContinue | ForEach-Object {
         Write-Output "$($_.directory)/$($_)"
     }
 }
+Set-Alias -Name ff -Value Find-File
+
+# Quick Access to System Information
+function sysinfo { Get-ComputerInfo }
+
+# Enhanced Listing
+function la { Get-ChildItem -Path . -Force | Format-Table -AutoSize }
+function ll { Get-ChildItem -Path . -Force -Hidden | Format-Table -AutoSize } 
+
+# Networking Utilities
+function flushdns { Clear-DnsClientCache }
+function Get-PubIP { (Invoke-WebRequest http://ifconfig.me/ip ).Content }
+Set-Alias -Name pubip -Value Get-PubIP
+
+# Clipboard Utilities
+function cpy { Set-Clipboard $args[0] }
+function pst { Get-Clipboard }
+
+# 
 function unzip {
     param (
         [string]$source,
@@ -222,11 +211,11 @@ function unzip {
     $zip = $shell.NameSpace($source)
     $destinationFolder = $shell.NameSpace($destination)
 
-    if ($zip -eq $null) {
+    if ($null-eq $zip) {
         Write-Host "Invalid zip file path: $source"
         return
     }
-    if ($destinationFolder -eq $null) {
+    if ($null -eq $destinationFolder) {
         Write-Host "Invalid destination folder path: $destination"
         return
     }
@@ -235,33 +224,33 @@ function unzip {
     Write-Host "Unzipping complete."
 }
 
-# Function to open profile in Notepad++
-function Edit-Profile {
-    param(
-        [string]$profilePath = $PROFILE
-    )
+# Aliases Linux Commands
+function ix ($file) { curl.exe -F "f:1=@$file" ix.io }
+function touch($file) { "" | Out-File $file -Encoding ASCII }
+function df { get-volume }
+function sed($file, $find, $replace) { (Get-Content $file).replace("$find", $replace) | Set-Content $file }
+function which($name) { Get-Command $name | Select-Object -ExpandProperty Definition }
+function export($name, $value) { set-item -force -path "env:$name" -value $value; }
+function pkill($name) { Get-Process $name -ErrorAction SilentlyContinue | Stop-Process }
+function pgrep($name) { Get-Process $name }
 
-    # If $profilePath is not defined or empty, use $PROFILE as the default
-    if ([string]::IsNullOrEmpty($profilePath)) {
-        $profilePath = $PROFILE
-    }
+# The rough equivalent of dir /s /b. For example, dirs *.png is dir /s /b *.png
+function dirs {
+    $results = @()
 
-    # Check if Notepad++ is installed and open the profile with it
-    if (Test-CommandExists notepad++) {
-        notepad++ $profilePath
+    if ($args.Count -gt 0) {
+        $results = Get-ChildItem -Recurse -Include $args | ForEach-Object { $_.FullName }
     } else {
-        Write-Host "Notepad++ is not installed. Opening profile with default editor."
-        notepad $profilePath
+        $results = Get-ChildItem -Recurse | ForEach-Object { $_.FullName }
     }
+
+    $results | ForEach-Object {
+        Write-Output $_
+    }
+
+    Write-Output "Counter: $($results.Count)"  # Output the amount of directories
 }
 
-# Create alias for editing profile
-Set-Alias -Name ep -Value Edit-Profile
-Set-Alias -Name gpro -Value gps
-
-function ix ($file) {
-    curl.exe -F "f:1=@$file" ix.io
-}
 function grep {
     param (
         [Parameter(Mandatory=$true, Position=0)]
@@ -301,83 +290,80 @@ function grep {
     catch {
         Write-Host "Error processing directory: $_"
     }
-}# Create new/empty profile file if not exists
-if (!(Test-Path -Path $PROFILE)) {
-    New-Item -ItemType File -Path $PROFILE -Force
 }
+# Compute file hashes - useful for checking successful downloads 
+function md5 { Get-FileHash -Algorithm MD5 $args }
+function sha1 { Get-FileHash -Algorithm SHA1 $args }
+function sha256 { Get-FileHash -Algorithm SHA256 $args }
 
-# Check if Notepad++ is installed
-$notepadPlusPlusPath = "C:\Program Files\Notepad++\notepad++.exe"
-if (Test-Path $notepadPlusPlusPath) {
-    $EDITOR = $notepadPlusPlusPath
-} else {
-    $EDITOR = "notepad"
-}
+# Initiate a graceful restart with a timeout of 10 seconds
+function reboot { & shutdown.exe /r /t 10 /f /c "Restarting computer gracefully. Save your work." }
 
-$env:EDITOR = $EDITOR
-
-# Ensure `editor` is installed and accessible
-if (Test-CommandExists 'notepad++') {
-    $EDITOR = 'notepad++'
-} else {
-    # Fallback to another editor or install notepad++
-    Write-Host "$EDITOR not found. Falling back to 'notepad'."
-    $EDITOR = 'notepad'
-}
-
-function touch($file) {
-    "" | Out-File $file -Encoding ASCII
-}
-function df {
-    get-volume
-}
-function sed($file, $find, $replace) {
-    (Get-Content $file).replace("$find", $replace) | Set-Content $file
-}
-function which($name) {
-    Get-Command $name | Select-Object -ExpandProperty Definition
-}
-function export($name, $value) {
-    set-item -force -path "env:$name" -value $value;
-}
-function pkill($name) {
-    Get-Process $name -ErrorAction SilentlyContinue | Stop-Process
-}
-function pgrep($name) {
-    Get-Process $name
-}
-function reboot {
-    # Initiate a graceful restart with a timeout of 10 seconds
-    & shutdown.exe /r /t 10 /f /c "Restarting computer gracefully. Save your work."
-}
+# Winget aliases
+function wingetupdate { Winget list --upgrade-available }
 
 # PSWindowsUpdate aliases
-function gwu {
-    Get-WindowsUpdate -verbose
-}
+function gwu { Get-WindowsUpdate -Verbose }
+function wuh { Get-WUHistory -Last 25 }
+function wul { Get-WULastResults }
 function iwu {
-    Get-WindowsUpdate -Install -AcceptAll -Verbose
-}
-function wuh {
-    Get-WUHistory -last 25 
-}
-function wul {
-    Get-WULastResults
-}
-function wingetupdate {
-    Winget list --upgrade-available
+    param(
+        [string]$Title,
+        [string]$KBArticleID
+    )
+    
+    # Create an array to hold the parameters
+    $params = @{
+        Install = $true
+        Verbose = $true
+        AcceptAll = $false
+    }
+
+    # Add parameters based on input
+    if ($Title) { $params['Title'] = $Title }
+    if ($KBArticleID) { $params['KBArticleID'] = $KBArticleID }
+    
+    # Call Get-WindowsUpdate with the parameters
+    Get-WindowsUpdate @params
 }
 
-# Quick Access to System Information
-function sysinfo { Get-ComputerInfo }
+# Full packages upgrade function
+function Update-All {
+    Write-Host "Updating all packages using winget and Chocolatey..."
 
-# Networking Utilities
-function flushdns { Clear-DnsClientCache }
+    try {
+        # Update all packages using winget
+        Write-Host "Updating packages with winget..."
+        winget upgrade --all --accept-source-agreements --accept-package-agreements
+        Write-Host "Winget packages updated successfully."
+    }
+    catch {
+        Write-Host "Error updating Winget packages: $_"
+        Pause  # Wait for user input to review the error
+    }
 
-# Clipboard Utilities
-function cpy { Set-Clipboard $args[0] }
+    try {
+        # Update all packages using Chocolatey
+        Write-Host "Checking for outdated Chocolatey packages..."
+        $outdated = choco outdated
+        if ($outdated) {
+            Write-Host "Updating Chocolatey packages..."
+            choco upgrade all -y
+            Write-Host "Chocolatey packages updated successfully."
+        } else {
+            Write-Host "No outdated Chocolatey packages found."
+        }
+    }
+    catch {
+        Write-Host "Error updating Chocolatey packages: $_"
+        Pause  # Wait for user input to review the error
+    }
 
-function pst { Get-Clipboard }
+    Write-Host "Package update process completed."
+}
+
+# Start HWiNFO
+function hwinfo { Start-Process -Path "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\HWiNFO64\HWiNFO® 64.lnk"; echo "running HWiNFO..." }
 
 # Enhanced PowerShell Experience
 Set-PSReadLineOption -Colors @{
@@ -385,42 +371,79 @@ Set-PSReadLineOption -Colors @{
     Parameter = 'Green'
     String    = 'DarkCyan'
 }
-# Function to alias "home" to "z ~" or "cd ~"
-function home {
-    if (Get-Command zoxide -ErrorAction SilentlyContinue) {
-        z ~
-    } else {
-        cd ~
-    }
-}
+
+##################
+#SAVING OLD STUFF
+##################
+
+# Check for Profile Updates
+#function Update-Profile {
+#    if (-not $global:canConnectToGitHub) {
+#        Write-Host "Skipping profile update check due to GitHub.com not responding within 1 second." -ForegroundColor Yellow
+#        return
+#    }
+#
+#   try {
+#        $url = "https://raw.githubusercontent.com/Masterkatt3n/new_boots/main/PowerShell-profile.ps1"
+#        $oldhash = Get-FileHash $PROFILE
+#        Invoke-RestMethod $url -OutFile "$env:temp/Microsoft.PowerShell_profile.ps1"
+#        $newhash = Get-FileHash "$env:temp/Microsoft.PowerShell_profile.ps1"
+#        if ($newhash.Hash -ne $oldhash.Hash) {
+#            Copy-Item -Path "$env:temp/Microsoft.PowerShell_profile.ps1" -Destination $PROFILE -Force
+#            Write-Host "Profile has been updated. Please restart your shell to reflect changes" -ForegroundColor Magenta
+#        }
+#    } catch {
+#        Write-Error "Unable to check for `$profile updates"
+#    } finally {
+#        Remove-Item "$env:temp/Microsoft.PowerShell_profile.ps1" -ErrorAction SilentlyContinue
+#    }
+#}
+#Update-Profile
+
+# Quick shortcut to start notepad
+#function n { notepad $args }
+
+
+# Ensure `editor` is installed and accessible
+#if (Test-CommandExists 'notepad++') {
+#    $env:EDITOR = "C:\Program Files\Notepad++\notepad++.exe"
+#} else {
+#    Write-Host "Notepad++ not found. Falling back to 'notepad'."
+#    $env:EDITOR = "notepad"
+#}
+
 # Progress Bar Custom Colors
 
 # Define a function to get the ANSI escape code for a given 256 color code
-function Get-256ColorCode {
-    param (
-        [int]$colorCode
-    )
-    return "`e[38;5;${colorCode}m"
-}
+#function Get-256ColorCode {
+#    param (
+#        [int]$colorCode
+#    )
+#    return "`e[38;5;${colorCode}"
+#}
 
 # Define the color transition sequence (e.g., blue to red to white)
-$colors = @(27, 33, 39, 45, 51, 87, 123, 159, 195, 187, 186, 185, 184, 228, 227, 226, 221, 220, 179, 178, 136, 137, 173, 172, 215, 214, 209, 167, 208, 166, 202,203, 204, 162, 161, 125, 197, 160, 124, 196) # Adjust as necessary for a smooth transition
+#$colors = @(27, 33, 39, 45, 51, 87, 123, 159, 195, 187, 186, 185, 184, 228, 227, 226, 221, 220, 179, 178, 136, 137, 173, 172, 215, 214, 209, 167, 208, 166, 202,203, 204, 162, 161, 125, 197, 160, 124, 196) # Adjust as necessary for a smooth transition
 
 # Clear the console
 #Clear-Host
 
-for ($i = 0; $i -le 100; $i++) {
-    $colorIndex = [math]::Round(($i / 100) * ($colors.Count - 1))
-    $colorCode = $colors[$colorIndex]
-    $color = Get-256ColorCode $colorCode
-    $activity = "${color}HotStuff${colorReset}"
-    $status = "${color}$i%Burnin'${colorReset}"
-    Write-Progress -Activity $activity -Status $status -PercentComplete $i
-    Start-Sleep -Milliseconds 100
-}
+#for ($i = 0; $i -le 100; $i++) {
+#    $colorIndex = [math]::Round(($i / 100) * ($colors.Count - 1))
+#    $colorCode = $colors[$colorIndex]
+#    $color = Get-256ColorCode $colorCode
+#    $activity = "${color}HotStuff${colorReset}"
+#    $status = "${color}$i%Burnin'${colorReset}"
+#    Write-Progress -Activity $activity -Status $status -PercentComplete $i
+#    Start-Sleep -Milliseconds 100
+#}
 
 # Clear the progress bar
-Write-Progress -Activity "Complete" -Status "One Burn Down" -Completed
+#Write-Progress -Activity "Complete" -Status "One Burn Down" -Completed
+
+#######################
+#END OLD STUFF
+#######################
 
 # Import the ChocolateyProfile that contains the necessary code to eable
 # tab-completions to function for `choco`.
@@ -434,10 +457,6 @@ if (Test-Path($ChocolateyProfile)) {
 
 #Write-Host "EDITOR is set to: $env:EDITOR"
 
-# Initialize Oh My Posh with the kali theme
-#oh-my-posh init pwsh --config 'C:\Users\steADM\AppData\Local\Programs\oh-my-posh\themes\kali.omp.json' | Invoke-Expression
-
-## Final Line to set prompt #
 oh-my-posh init pwsh --config https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/kali.omp.json | Invoke-Expression
 
 # Ensure Zoxide is initialized if available, or install it if not
